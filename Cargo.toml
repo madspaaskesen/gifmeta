@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
 description = "Read and manipulate GIF metadata such as frame delay and loop count"
-license = "MIT OR Apache-2.0"
+license = "MIT"
+authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
 repository = "https://github.com/madspaaskesen/gifmeta"
+readme = "README.md"
 categories = ["command-line-utilities", "multimedia::images"]
 keywords = ["gif", "metadata", "cli", "loop", "delay"]
 
