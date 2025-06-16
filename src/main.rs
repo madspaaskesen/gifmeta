@@ -17,6 +17,12 @@ enum Commands {
         path: PathBuf,
     },
 
+    /// Get loop count
+    GetLoop {
+        #[arg()]
+        path: PathBuf,
+    },
+
     /// Set a fixed frame delay (in 10ms units)
     SetDelay {
         #[arg()]
@@ -43,6 +49,7 @@ fn main() {
 
     match cli.command {
         Commands::Info { path } => gifmeta::print_info(&path),
+        Commands::GetLoop { path } => gifmeta::print_loop_count(&path),
         Commands::SetDelay { path, delay, output } => gifmeta::set_frame_delay(&path, delay, output),
         Commands::SetLoop { path, count, output } => gifmeta::set_loop_count(&path, count, output),
     }

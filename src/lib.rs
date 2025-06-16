@@ -1,8 +1,14 @@
+pub mod commands;
+
 use std::path::PathBuf;
 
 /// Print metadata about the GIF file
 pub fn print_info(path: &PathBuf) {
-    println!("(stub) Showing metadata for: {:?}", path);
+    commands::info::show_info(path);
+}
+
+pub fn print_loop_count(path: &PathBuf) {
+    commands::get_loop::print_loop_count(path);
 }
 
 /// Set a fixed delay for all frames in the GIF

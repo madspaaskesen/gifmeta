@@ -1,3 +1,14 @@
+# macOS junk
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+__MACOSX/
+# Linux junk
 /target
 **/*.rs.bk
-Cargo.lock
+# temporary files
+/tests/testdata/1.gif
