@@ -1,27 +1,36 @@
-Yes please! 🫶 Here’s a polished **`README.md` version 1** for `gifmeta`, crafted with love and clarity — perfect for crates.io and GitHub.
+# 🦀 gifmeta
+
+**gifmeta** is a small, fast, and sacred tool for inspecting and editing GIF metadata.  
+Use it to extract loop counts, view frame delays, and set precise timing — all from the command line or via Rust.
+
+> ❤️ Built with love and clarity. No unnecessary bloat.
 
 ---
 
-````md
-# 🎞️ gifmeta
+## ✨ Features
 
-> Inspect and edit GIF metadata from the command line.
-
-`gifmeta` is a simple, fast CLI tool written in Rust to read and modify basic GIF metadata such as:
-
-- ✅ Frame count
-- ✅ Dimensions
-- ✅ Loop count (including infinite)
-- ✅ Frame delay (duration per frame)
-
-This tool is ideal for automation, batch fixes, or inspecting media metadata in GIF workflows.
+- 🔍 Inspect frame count, size, and duration
+- 🔁 View and modify loop counts
+- 🕰️ Show per-frame delays (preview timing)
+- 🎯 Set a fixed delay across all frames
+- 🎯 Prepare for per-frame delay editing (coming in v0.3.0)
 
 ---
 
 ## 📦 Installation
 
-Coming soon via [crates.io](https://crates.io/)! For now:
+Install via [crates.io](https://crates.io/)!:
+```bash
+cargo install gifmeta
+```
 
+Or use directly with:
+
+```bash
+cargo run -- <command>
+```
+
+Install via GitHub
 ```bash
 git clone https://github.com/madspaaskesen/gifmeta.git
 cd gifmeta
@@ -31,35 +40,50 @@ cargo build --release
 
 ---
 
-## 🚀 Usage
+## 🛠️ Usage
 
+### Show metadata
 ```bash
-gifmeta info mygif.gif
+gifmeta info --input input.gif
 ```
 
-Prints metadata about the GIF.
-
+### Get loop count
 ```bash
-gifmeta set-delay mygif.gif 10 -o new.gif
+gifmeta get-loop --input input.gif
 ```
 
-Sets each frame’s delay to 100ms (10 × 10ms), outputs to `new.gif`.
-
+### Set loop count
 ```bash
-gifmeta set-loop mygif.gif 3 -o loop3.gif
+gifmeta set-loop --input input.gif --count 3 --output out.gif
 ```
 
-Sets the loop count to 3 (or use `0` for infinite).
+### Show all frame delays
+```bash
+gifmeta show-frame-delays --input input.gif
+```
+
+### Set delay for all frames
+```bash
+gifmeta set-delay --input input.gif --delay 10 --output out.gif
+```
+
+### Set frame specific delays
+```bash
+gifmeta set-frame-delay --input input.gif --frame-numbers 1,5,80 --delay-values 10,20,100 --output out.gif
+```
 
 ---
 
 ## 🛠 Commands
 
-| Command     | Description                         |
-| ----------- | ----------------------------------- |
-| `info`      | Show metadata (frames, size, delay) |
-| `set-delay` | Set a fixed delay for all frames    |
-| `set-loop`  | Set loop count (0 = infinite)       |
+| Command             | Description                               |
+| ------------------- | ----------------------------------------- |
+| `info`              | Show basic metadata (frames, size, delay) |
+| `get-loop`          | Get the loop count from a GIF             |
+| `set-loop`          | Set the loop count (use `0` for infinite) |
+| `show-frame-delays` | Display the delay of every frame          |
+| `set-delay`         | Apply a fixed delay to all frames         |
+| `set-frame-delay`   | Set custom delays for specific frames     |
 
 ---
 
@@ -75,14 +99,13 @@ GIFs are still everywhere — especially in messaging, memes, and UI loaders. Bu
 
 ---
 
-## 🧩 Roadmap
+## 🛤️ Roadmap
 
-* [x] CLI with `clap`
-* [x] Print metadata
-* [ ] Modify individual frame delays
-* [ ] Batch processing
-* [ ] WebAssembly version?
-* [ ] GUI wrapper?
+- [x] Set loop count (v0.2.0)
+- [x] CLI structure refactored with `clap v4`
+- [ ] Set per-frame delays via frame/index lists (v0.3.0)
+- [ ] GIF preview tools
+- [ ] Tauri GUI companion
 
 ---
 
@@ -92,13 +115,20 @@ Wanna help? Fork, clone, and PRs welcome. You can also suggest Codex tasks or op
 
 ---
 
-## 🪪 License
+## 🔗 Links
 
-Licensed under **MIT OR Apache-2.0** — pick what works for you.
+- [Crates.io](https://crates.io/crates/gifmeta)
+- [Documentation (coming soon)](https://docs.rs/gifmeta)
+- [GitHub](https://github.com/madspaaskesen/gifmeta)
+
+---
+
+## 🕊️ License
+
+MIT — do good things with it.
 
 ---
 
 ## 🌟 Author
 
 Built by [Mads Paaskesen](https://github.com/madspaaskesen) with Rust and a soft spot for retro formats.
-

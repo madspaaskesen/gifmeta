@@ -102,11 +102,22 @@ pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) {
 /// use gifmeta::set_loop_count;
 /// set_loop_count(&"tests/testdata/2.gif".into(), 3, None);
 /// ```
-pub fn set_loop_count(path: &PathBuf, count: u16, output: Option<PathBuf>) {
+pub fn set_loop_count(path: &PathBuf, count: u16, output: Option<PathBuf>) -> Result<u16, String> {
     println!(
         "(stub) Setting loop count {} for: {:?} → {:?}",
         count, path, output
     );
+    let output_clone = output.clone();
+    match commands::loop_count::set_loop_count(path, count, output) {
+        Ok(_) => {
+            println!("New loop count: {} saved to: {:?}", count, output_clone);
+            Ok(count)
+        }
+        Err(e) => {
+            eprintln!("Failed to extract loop count: {}", e);
+            Err(e)
+        }
+    }
 }
 
 /// Displays the delay (in centiseconds) of each frame in the GIF.

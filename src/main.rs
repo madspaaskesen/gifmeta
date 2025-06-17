@@ -79,7 +79,9 @@ fn main() {
             path,
             count,
             output,
-        } => gifmeta::set_loop_count(&path, count, output),
+        } => {
+            let _ = gifmeta::set_loop_count(&path, count, output);
+        }
         Commands::ShowFrameDelays { path } => {
             let _ = gifmeta::show_frame_delays(&path);
         }
