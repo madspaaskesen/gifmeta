@@ -102,10 +102,13 @@ GIFs are still everywhere — especially in messaging, memes, and UI loaders. Bu
 ## 🛤️ Roadmap
 
 - [x] Set loop count (v0.2.0)
-- [x] CLI structure refactored with `clap v4`
-- [ ] Set per-frame delays via frame/index lists (v0.3.0)
-- [ ] GIF preview tools
-- [ ] Tauri GUI companion
+- [x] CLI structure with `clap v4`
+- [ ] Set per-frame delays (v0.3.0)
+- [ ] Frame editing with duration visuals (experimental)
+- [ ] GUI Companion (Tauri, optional)
+
+⚠️ Batch processing and WASM are intentionally skipped.  
+These are best handled externally with scripting or shell tooling.
 
 ---
 
