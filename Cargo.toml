@@ -1,9 +1,9 @@
 [package]
 name = "gifmeta"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
-description = "Read and manipulate GIF metadata such as frame delay and loop count"
+description = "A sacred tool for inspecting and editing GIF metadata."
 license = "MIT"
 repository = "https://github.com/madspaaskesen/gifmeta"
 readme = "README.md"
