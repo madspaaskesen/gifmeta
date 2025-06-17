@@ -35,7 +35,7 @@ enum Commands {
 
     /// Set loop count
     SetLoop {
-        #[arg()]
+        #[arg()]    
         path: PathBuf,
         #[arg()]
         count: u16,
@@ -48,8 +48,8 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Info { path } => gifmeta::print_info(&path),
-        Commands::GetLoop { path } => gifmeta::print_loop_count(&path),
+        Commands::Info { path } => { let _ = gifmeta::get_metadata(&path); },
+        Commands::GetLoop { path } => { let _ = gifmeta::get_loop_count(&path); },
         Commands::SetDelay { path, delay, output } => gifmeta::set_frame_delay(&path, delay, output),
         Commands::SetLoop { path, count, output } => gifmeta::set_loop_count(&path, count, output),
     }

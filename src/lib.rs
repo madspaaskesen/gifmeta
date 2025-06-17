@@ -2,6 +2,19 @@ pub mod commands;
 
 use std::path::PathBuf;
 
+// Define a basic GifError type if not already defined elsewhere
+#[derive(Debug)]
+pub struct GifError(pub String);
+
+/// Metadata summary for a GIF file.
+#[derive(Debug, PartialEq)]
+pub struct GifMetadata {
+    pub width: u16,
+    pub height: u16,
+    pub frame_count: u32,
+    pub total_duration_cs: u32, // centiseconds
+}
+
 /// Prints detailed metadata about the provided GIF file.
 /// 
 /// This includes dimensions, frame count, duration, and loop count.
@@ -12,11 +25,20 @@ use std::path::PathBuf;
 /// 
 /// # Example
 /// ```
-/// use gifmeta::print_info;
-/// print_info(&std::path::PathBuf::from("tests/testdata/1.gif"));
+/// use gifmeta::get_metadata;
+/// get_metadata(&std::path::PathBuf::from("tests/testdata/1.gif"));
 /// ```
-pub fn print_info(path: &PathBuf) {
-    commands::info::show_info(path);
+pub fn get_metadata(path: &PathBuf) -> Result<GifMetadata, String> {
+    match commands::info::get_metadata(path) {
+        Ok(meta) => {
+            println!("✅ Metadata for : {}\n", path.display());
+            println!("🖼️ Dimensions   : {} × {}", meta.width, meta.height);
+            println!("🖼️ Frame count  : {}", meta.frame_count);
+            println!("⏱️ Duration     : {} centiseconds", meta.total_duration_cs);
+            Ok(meta)
+        }
+        Err(e) => Err(e),
+    }
 }
 
 /// Prints the loop count of the provided GIF file.
@@ -27,12 +49,22 @@ pub fn print_info(path: &PathBuf) {
 /// 
 /// # Example
 /// ```
-/// use gifmeta::print_loop_count;
-/// print_loop_count(&std::path::PathBuf::from("tests/testdata/2.gif"));
+/// use gifmeta::get_loop_count;
+/// get_loop_count(&std::path::PathBuf::from("tests/testdata/2.gif"));
 /// ```
-pub fn print_loop_count(path: &PathBuf) {
-    commands::loop_count::show_loop_count(path);
+pub fn get_loop_count(path: &PathBuf) -> Result<u16, String> {
+    match commands::loop_count::extract_loop_count(path) {
+        Ok(count) => {
+            println!("Loop count: {}", count);
+            Ok(count)
+        }
+        Err(e) => {
+            eprintln!("Failed to extract loop count: {}", e);
+            Err(e)
+        }
+    }
 }
+
 
 /// Sets a fixed frame delay (in centiseconds) for all frames in the GIF.
 ///

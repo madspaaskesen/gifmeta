@@ -22,9 +22,3 @@ pub fn extract_loop_count<P: AsRef<Path>>(path: P) -> Result<u16, String> {
 
     Err("Loop count not found".into())
 }
-pub fn show_loop_count(path: &Path) {
-    match extract_loop_count(path) {
-        Ok(count) => println!("Loop count: {}", count),
-        Err(e) => eprintln!("Failed to extract loop count: {}", e),
-    }
-}
