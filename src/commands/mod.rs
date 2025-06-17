@@ -1,2 +1,2 @@
 pub mod info;
-pub mod get_loop;
+pub mod loop_count;
