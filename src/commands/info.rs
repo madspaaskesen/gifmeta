@@ -1,7 +1,7 @@
+use gif::DecodeOptions;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use gif::DecodeOptions;
 
 use crate::GifMetadata;
 
@@ -18,12 +18,17 @@ pub fn get_metadata(path: &Path) -> Result<GifMetadata, String> {
     let mut decoder = DecodeOptions::new();
     decoder.set_color_output(gif::ColorOutput::Indexed);
     decoder.allow_unknown_blocks(true);
-    let mut reader = decoder.read_info(BufReader::new(file)).map_err(|_| "❌ Failed to decode GIF")?;
+    let mut reader = decoder
+        .read_info(BufReader::new(file))
+        .map_err(|_| "❌ Failed to decode GIF")?;
 
     let mut frame_count = 0;
     let mut total_duration = 0;
 
-    while let Some(frame) = reader.read_next_frame().map_err(|_| "❌ Error reading frame")? {
+    while let Some(frame) = reader
+        .read_next_frame()
+        .map_err(|_| "❌ Error reading frame")?
+    {
         frame_count += 1;
         total_duration += frame.delay as u32;
     }

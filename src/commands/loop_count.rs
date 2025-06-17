@@ -13,7 +13,8 @@ pub fn extract_loop_count<P: AsRef<Path>>(path: P) -> Result<u16, String> {
             let _block_size = buffer[i + 2] as usize;
             if &buffer[i + 3..i + 3 + 11] == b"NETSCAPE2.0" {
                 let loop_data_index = i + 3 + 11 + 2;
-                let loop_count = u16::from_le_bytes([buffer[loop_data_index], buffer[loop_data_index + 1]]);
+                let loop_count =
+                    u16::from_le_bytes([buffer[loop_data_index], buffer[loop_data_index + 1]]);
                 return Ok(loop_count);
             }
         }
