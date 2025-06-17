@@ -11,4 +11,5 @@ __MACOSX/
 /target
 **/*.rs.bk
 # temporary files
-/tests/testdata/1.gif
+#/tests/testdata/1.gif
+#/tests/testdata/2.gif
