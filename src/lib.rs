@@ -2,18 +2,8 @@ pub mod commands;
 
 use std::path::PathBuf;
 
-// Define a basic GifError type if not already defined elsewhere
-#[derive(Debug)]
-pub struct GifError(pub String);
-
-/// Metadata summary for a GIF file.
-#[derive(Debug, PartialEq)]
-pub struct GifMetadata {
-    pub width: u16,
-    pub height: u16,
-    pub frame_count: u32,
-    pub total_duration_cs: u32, // centiseconds
-}
+pub mod gifmeta_structs;
+pub mod loop_count;
 
 /// Prints detailed metadata about the provided GIF file.
 ///
@@ -28,13 +18,36 @@ pub struct GifMetadata {
 /// use gifmeta::get_metadata;
 /// get_metadata(&std::path::PathBuf::from("tests/testdata/1.gif"));
 /// ```
-pub fn get_metadata(path: &PathBuf) -> Result<GifMetadata, String> {
+pub fn get_metadata(
+    path: &PathBuf,
+    show_frames: bool,
+) -> Result<gifmeta_structs::GifMetadata, String> {
     match commands::info::get_metadata(path) {
         Ok(meta) => {
             println!("✅ Metadata for : {}\n", path.display());
             println!("🖼️ Dimensions   : {} × {}", meta.width, meta.height);
             println!("🖼️ Frame count  : {}", meta.frame_count);
             println!("⏱️ Duration     : {} centiseconds", meta.total_duration_cs);
+            println!("🔄Loop         : {:?}", meta.loop_count);
+            println!("🎨Has palette  : {:?}", meta.has_global_palette);
+            println!("🎨Palette size : {:?}", meta.global_palette_size.unwrap());
+            println!("🎨Transparency : {:?}", meta.uses_transparency);
+
+            if show_frames {
+                println!("\n🧩Frame delays :");
+                for frame in &meta.frames {
+                    println!(
+                        "  • Frame {:>3}: {:>4} cs{}",
+                        frame.index,
+                        frame.delay_cs,
+                        match frame.transparent_index {
+                            Some(idx) => format!(" (transparent index: {})", idx),
+                            None => "".to_string(),
+                        }
+                    );
+                }
+            }
+
             Ok(meta)
         }
         Err(e) => Err(e),
@@ -53,7 +66,7 @@ pub fn get_metadata(path: &PathBuf) -> Result<GifMetadata, String> {
 /// get_loop_count(&std::path::PathBuf::from("tests/testdata/2.gif"));
 /// ```
 pub fn get_loop_count(path: &PathBuf) -> Result<u16, String> {
-    match commands::loop_count::extract_loop_count(path) {
+    match loop_count::extract_loop_count(path) {
         Ok(count) => {
             println!("Loop count: {}", count);
             Ok(count)
@@ -80,11 +93,22 @@ pub fn get_loop_count(path: &PathBuf) -> Result<u16, String> {
 /// use gifmeta::set_frame_delay;
 /// set_frame_delay(&"tests/testdata/1.gif".into(), 10, None);
 /// ```
-pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) {
+pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) -> Result<u16, String> {
+    let output_clone = output.clone();
     println!(
         "(stub) Setting delay {} for: {:?} → {:?}",
         delay, path, output
     );
+    match commands::set_frame_delay::set_frame_delay(path, delay, output) {
+        Ok(_) => {
+            println!("New delay: {} saved to: {:?}", delay, output_clone);
+            Ok(delay)
+        }
+        Err(e) => {
+            eprintln!("Failed to set delay: {}", e);
+            Err(e)
+        }
+    }
 }
 
 /// Sets the loop count metadata in a GIF file.
@@ -103,12 +127,8 @@ pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) {
 /// set_loop_count(&"tests/testdata/2.gif".into(), 3, None);
 /// ```
 pub fn set_loop_count(path: &PathBuf, count: u16, output: Option<PathBuf>) -> Result<u16, String> {
-    println!(
-        "(stub) Setting loop count {} for: {:?} → {:?}",
-        count, path, output
-    );
     let output_clone = output.clone();
-    match commands::loop_count::set_loop_count(path, count, output) {
+    match loop_count::set_loop_count(path, count, output) {
         Ok(_) => {
             println!("New loop count: {} saved to: {:?}", count, output_clone);
             Ok(count)

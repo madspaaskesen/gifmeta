@@ -16,6 +16,10 @@ enum Commands {
         /// Path to the GIF file
         #[arg()]
         path: PathBuf,
+
+        /// Show per-frame delay information
+        #[arg(long)]
+        show_frames: bool,
     },
 
     /// Get loop count
@@ -64,8 +68,8 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Info { path } => {
-            let _ = gifmeta::get_metadata(&path);
+        Commands::Info { path, show_frames } => {
+            let _ = gifmeta::get_metadata(&path, show_frames);
         }
         Commands::GetLoop { path } => {
             let _ = gifmeta::get_loop_count(&path);
@@ -74,7 +78,9 @@ fn main() {
             path,
             delay,
             output,
-        } => gifmeta::set_frame_delay(&path, delay, output),
+        } => {
+            let _ = gifmeta::set_frame_delay(&path, delay, output);
+        }
         Commands::SetLoop {
             path,
             count,
