@@ -61,7 +61,16 @@ pub fn mod_gif(
     delay_all: Option<u16>,
     delays: Option<HashMap<usize, u16>>,
 ) -> Result<(), String> {
-    Ok(())
+    match commands::modify::apply_modifications(input, loop_count, delay_all, delays, output) {
+        Ok(_) => {
+            println!("File modified.");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("Failed to extract loop count: {}", e);
+            Err(e)
+        }
+    }
 }
 
 /// Prints the loop count of the provided GIF file.

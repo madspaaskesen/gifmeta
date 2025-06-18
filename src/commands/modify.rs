@@ -1,14 +1,15 @@
 // src/commands/modify.rs
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
-use gif::{DecodeOptions, Encoder, Frame, Repeat};
+use gif::{DecodeOptions, Encoder, Repeat};
 use uuid::Uuid;
 
-use crate::commands::info;
-use crate::gifmeta_structs::{FrameMeta, GifMetadata};
+//use crate::commands::info;
+//use crate::gifmeta_structs::{FrameMeta, GifMetadata};
 
 /// Applies modifications to a GIF file, including loop count, global delay, and specific frame delays.
 ///
@@ -24,7 +25,7 @@ pub fn apply_modifications(
     input: &PathBuf,
     loop_count: Option<u16>,
     global_delay: Option<u16>,
-    frame_delays: Option<Vec<(usize, u16)>>,
+    frame_delays: Option<HashMap<usize, u16>>,
     output: Option<PathBuf>,
 ) -> Result<(), String> {
     // Load GIF metadata + frames
@@ -39,7 +40,7 @@ pub fn apply_modifications(
     // Decide output file
     let out_path = output
         .clone()
-        .unwrap_or_else(|| std::env::temp_dir().join(format!("{}.mod.gif", uuid::Uuid::new_v4())));
+        .unwrap_or_else(|| std::env::temp_dir().join(format!("{}.mod.gif", Uuid::new_v4())));
     let out_file =
         File::create(&out_path).map_err(|e| format!("Failed to create output: {}", e))?;
     let mut writer = BufWriter::new(out_file);
