@@ -61,6 +61,12 @@ pub fn mod_gif(
     delay_all: Option<u16>,
     delays: Option<HashMap<usize, u16>>,
 ) -> Result<(), String> {
+    if loop_count.is_none() && delay_all.is_none() && delays.as_ref().map_or(true, |m| m.is_empty()) {
+        eprintln!("⚠️  No modifications specified.");
+        eprintln!("   Use at least one of: --loop, --delay, or --delays");
+        return Err("No modification parameters provided.".into());
+    }
+
     match commands::modify::apply_modifications(input, loop_count, delay_all, delays, output) {
         Ok(_) => {
             println!("File modified.");
