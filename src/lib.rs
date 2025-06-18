@@ -1,6 +1,6 @@
 pub mod commands;
 
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 pub mod gifmeta_structs;
 pub mod loop_count;
@@ -52,6 +52,16 @@ pub fn get_metadata(
         }
         Err(e) => Err(e),
     }
+}
+
+pub fn mod_gif(
+    input: &PathBuf,
+    output: Option<PathBuf>,
+    loop_count: Option<u16>,
+    delay_all: Option<u16>,
+    delays: Option<HashMap<usize, u16>>,
+) -> Result<(), String> {
+    Ok(())
 }
 
 /// Prints the loop count of the provided GIF file.

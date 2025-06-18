@@ -22,6 +22,24 @@ enum Commands {
         show_frames: bool,
     },
 
+    /// Modify GIF file
+    Mod {
+        #[arg()]
+        input: PathBuf,
+
+        #[arg(long)]
+        loop_count: Option<u16>,
+
+        #[arg(long)]
+        delay: Option<u16>,
+
+        #[arg(long)]
+        delays: Option<String>,
+
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
     /// Get loop count
     GetLoop {
         #[arg()]
@@ -70,6 +88,20 @@ fn main() {
     match cli.command {
         Commands::Info { path, show_frames } => {
             let _ = gifmeta::get_metadata(&path, show_frames);
+        }
+        Commands::Mod {
+            input,
+            loop_count,
+            delay,
+            delays,
+            output,
+        } => {
+            let delays_map = delays
+                .as_ref()
+                .map(|s| parse_csv::parse_keyval_csv(s))
+                .transpose()
+                .unwrap_or(None);
+            let _ = gifmeta::mod_gif(&input, output, loop_count, delay, delays_map);
         }
         Commands::GetLoop { path } => {
             let _ = gifmeta::get_loop_count(&path);
