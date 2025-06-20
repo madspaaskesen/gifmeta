@@ -53,7 +53,7 @@ cat <<EOF > $REPORT
 <div class="side-by-side">
   <div>
     <h2>🖼️ Original</h2>
-    <img src="../../testdata/loop/2frame-soft.gif" alt="Original">
+    <img src="../testdata/loop/2frame-soft.gif" alt="Original">
     <pre>$(cat "$META_DIR/original.json")</pre>
   </div>
 
