@@ -1,12 +1,12 @@
 use std::fs;
 use std::path::Path;
 // use gifmeta::parse_csv; // Removed because there is no parse_csv in the root
-use gifmeta::utils::parse_csv::parse_keyval_csv;
 use gifmeta::mod_gif;
+use gifmeta::utils::parse_csv::parse_keyval_csv;
 
 #[test]
 fn test_set_loop_variants() {
-    use gifmeta::utils::loop_count::{set_loop_count, extract_loop_count};
+    use gifmeta::utils::loop_count::{extract_loop_count, set_loop_count};
 
     let input_path = Path::new("tests/testdata/loop/loop-once.gif");
 
@@ -20,16 +20,27 @@ fn test_set_loop_variants() {
         }
 
         // Act
-        let result = set_loop_count(&input_path.to_path_buf(), loop_value, Some(output_path.to_path_buf()));
+        let result = set_loop_count(
+            &input_path.to_path_buf(),
+            loop_value,
+            Some(output_path.to_path_buf()),
+        );
         assert!(result.is_ok(), "Failed to set loop count {}", loop_value);
 
         // Assert
         let actual = extract_loop_count(output_path).unwrap();
-        assert_eq!(actual, loop_value, "Loop count did not match for value {}", loop_value);
-        assert!(output_path.exists(), "Output file was not created for loop count {}", loop_value);
+        assert_eq!(
+            actual, loop_value,
+            "Loop count did not match for value {}",
+            loop_value
+        );
+        assert!(
+            output_path.exists(),
+            "Output file was not created for loop count {}",
+            loop_value
+        );
     }
 }
-
 
 #[test]
 fn test_set_loop_and_frame_delays() {
@@ -53,7 +64,13 @@ fn test_set_loop_and_frame_delays() {
         .transpose()
         .unwrap_or(None);
 
-    let result = mod_gif(&input_pathbuf, Some(output_pathbuf.clone()), Some(3), Some(4), delays_map);
+    let result = mod_gif(
+        &input_pathbuf,
+        Some(output_pathbuf.clone()),
+        Some(3),
+        Some(4),
+        delays_map,
+    );
     assert!(result.is_ok());
 
     // Optionally: check that file exists
@@ -64,8 +81,6 @@ fn test_set_loop_and_frame_delays() {
     let output_data = output_result.ok();
     let loop_count = output_data.unwrap().loop_count;
     assert_eq!(loop_count, 3, "Expected loop count to be 0 (infinite)");
-
-    
 }
 
 #[test]
@@ -87,9 +102,9 @@ fn test_mod_preserves_loop_count_if_not_specified() {
     let result = gifmeta::mod_gif(
         &input_path.to_path_buf(),
         Some(output_path.to_path_buf()),
-        None,                   // <-- no loop count
-        Some(5),                // set uniform delay
-        None,                   // no delay map
+        None,    // <-- no loop count
+        Some(5), // set uniform delay
+        None,    // no delay map
     );
     assert!(result.is_ok());
 

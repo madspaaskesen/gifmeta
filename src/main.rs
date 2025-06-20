@@ -49,16 +49,19 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Info { path, show_frames, json } => {
+        Commands::Info {
+            path,
+            show_frames,
+            json,
+        } => {
             let meta_result = gifmeta::get_metadata(&path, show_frames);
             let meta_data = meta_result.ok();
-            
+
             if let Some(meta) = meta_data {
                 if json {
                     let json_str = serde_json::to_string_pretty(&meta).unwrap();
                     println!("{}", json_str);
-                }
-                else {
+                } else {
                     println!("✅ Metadata for : {}\n", path.display());
                     println!("🖼️ Dimensions   : {} × {}", meta.width, meta.height);
                     println!("🖼️ Frame count  : {}", meta.frame_count);
