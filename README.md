@@ -1,19 +1,64 @@
 # 🦀 gifmeta
 
-**gifmeta** is a small, fast, and sacred tool for inspecting and editing GIF metadata.  
-Use it to extract loop counts, view frame delays, and set precise timing — all from the command line or via Rust.
+**gifmeta** is a small, focused tool for inspecting and modifying GIF metadata.  
+It’s designed for developers, artists, and anyone needing **loop control** and **timing tweaks** — fast and reliably.
 
-> ❤️ Built with love and clarity. No unnecessary bloat.
+> ❤️ Built with Rust. Sacredly simple. Zero bloat.
 
 ---
 
-## ✨ Features
+## 🧍‍♂️ Why I Built This
 
-- 🔍 Inspect frame count, size, and duration
-- 🔁 View and modify loop counts
-- 🕰️ Show per-frame delays (preview timing)
-- 🎯 Set a fixed delay across all frames
-- 🎯 Prepare for per-frame delay editing (coming in v0.3.0)
+Because changing loop count or frame delays in GIFs was a pain.
+
+Most tools were too heavy, too raw, or lacked reliable preview/testing.  
+`gifmeta` was born to fix that — with precise CLI commands, minimalism, and full test coverage.
+
+---
+
+## 🔧 Features
+
+- 🔁 Set infinite or fixed loop count (`--loop-count`)
+- ⏱️ Apply fixed delay to all frames (`--delay`)
+- 🎯 Set specific frame delays (`--delays 1=30,4=60`)
+- 📤 Output JSON metadata (`--json`)
+- 🧪 CLI + doc tests for core functions
+- 🖼️ Side-by-side **visual preview reports** via `run-visual-preview.sh`
+
+---
+
+## 🙋‍♂️ Why Not Use gifsicle or gif-rs?
+
+You can — and should, if you need full encoding pipelines.
+
+But `gifmeta` wraps just the things most of us need *quickly*:
+- 🔁 Loop control (infinite or fixed)
+- ⏱ Frame delay override (global + selective)
+- ✅ Verified, minimal changes
+- 🔍 Human-friendly reports
+- ⚙️ Ideal for future GUI integration or scripting
+
+---
+
+## ⚠️ What It’s Not
+
+- ❌ Not a full GIF encoder
+- ❌ Not for image content editing
+- ❌ Not a general-purpose wrapper
+
+`gifmeta` lives in a small, useful space — metadata tuning and clarity. Nothing more.
+
+---
+
+## 🧠 Why This Exists
+
+GIFs are still everywhere — especially in messaging, memes, and UI loaders. But modifying timing or loop behavior often requires heavy tools.
+
+`gifmeta` lets you do it instantly, with:
+
+* 🦀 Native Rust speed
+* 🧼 Zero bloat
+* 🖥️ CLI-first ergonomics
 
 ---
 
@@ -36,66 +81,85 @@ git clone https://github.com/madspaaskesen/gifmeta.git
 cd gifmeta
 cargo build --release
 ./target/release/gifmeta --help
-````
+```
 
 ---
 
 ## 🛠️ Usage
 
+### Info options
+
+- `--json`: Get output in json format
+
+### Modify (mod) options
+
+You can combine any of the following:
+
+- `--loop-count <n>`: Set loop behavior (0 = infinite, 1 = once, 2 = twice…)
+- `--delay <n>`: Set same delay for all frames. Unit is **centiseconds** (1 = 10ms).
+- `--delays <csv>`: Override specific frames. Format: `1=15,3=50` (in centiseconds).
+
 ### Show metadata
 ```bash
-gifmeta info --input input.gif
+gifmeta info --input tests/testdata/loop/10frame-rainbow.gif
 ```
 
-### Get loop count
+### Show metadata output as json
 ```bash
-gifmeta get-loop --input input.gif
+gifmeta info --input tests/testdata/loop/10frame-rainbow.gif --json
 ```
 
-### Set loop count
+### Modify loop count
 ```bash
-gifmeta set-loop --input input.gif --count 3 --output out.gif
+gifmeta mod --input tests/testdata/loop/loop-once.gif --loop-count 10 --output tests/testdata/loop/loop-once-modified.gif
 ```
 
-### Show all frame delays
+### Modify delay on all frames to 100ms or 10 centiseconds
 ```bash
-gifmeta show-frame-delays --input input.gif
+gifmeta mod --input tests/testdata/timing/zero-delay.gif --delay 10 --output tests/testdata/timing/zero-delay-modified.gif
 ```
 
-### Set delay for all frames
+### Modify frame delays using centiseconds (1 = 10ms): frame 0 → 1, frame 1 → 20
 ```bash
-gifmeta set-delay --input input.gif --delay 10 --output out.gif
+gifmeta mod --input tests/testdata/timing/zero-delay.gif --delays "0=1,1=20" --output tests/testdata/timing/zero-delay-modified2.gif
 ```
 
-### Set frame specific delays
+### Modify delay on all frames to 150ms, set specific frame 0 to 20ms and frame 1 to 200ms.
 ```bash
-gifmeta set-frame-delay --input input.gif --frame-numbers 1,5,80 --delay-values 10,20,100 --output out.gif
+gifmeta mod --input tests/testdata/timing/zero-delay.gif --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified3.gif
+```
+
+### Modify all values at once example
+```bash
+gifmeta mod --input tests/testdata/timing/zero-delay.gif --loop-count 0 --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified4.gif
 ```
 
 ---
 
 ## 🛠 Commands
 
-| Command             | Description                               |
-| ------------------- | ----------------------------------------- |
-| `info`              | Show basic metadata (frames, size, delay) |
-| `get-loop`          | Get the loop count from a GIF             |
-| `set-loop`          | Set the loop count (use `0` for infinite) |
-| `show-frame-delays` | Display the delay of every frame          |
-| `set-delay`         | Apply a fixed delay to all frames         |
-| `set-frame-delay`   | Set custom delays for specific frames     |
++ | Command | Description                                       |
++ | ------- | ------------------------------------------------- |
++ | `info`  | Display GIF metadata (dimensions, loop, delays)   |
++ | `mod`   | Apply metadata modifications (loop/delays/output) |
 
 ---
 
-## 🧠 Why This Exists
+## 📊 Visual Preview Report
 
-GIFs are still everywhere — especially in messaging, memes, and UI loaders. But modifying timing or loop behavior often requires heavy tools.
+You can run:
 
-`gifmeta` lets you do it instantly, with:
+```bash
+./run-visual-preview.sh
+```
 
-* 🦀 Native Rust speed
-* 🧼 Zero bloat
-* 🖥️ CLI-first ergonomics
+It will:
+
+* Apply a set of metadata modifications
+* Generate side-by-side comparisons
+* Output a beautiful `tests/visual/report.html`
+
+This is useful for testing transparency, timing, or human-visible playback changes.
 
 ---
 
@@ -103,7 +167,7 @@ GIFs are still everywhere — especially in messaging, memes, and UI loaders. Bu
 
 - [x] Set loop count (v0.2.0)
 - [x] CLI structure with `clap v4`
-- [ ] Set per-frame delays (v0.3.0)
+- [x] Set per-frame delays (v0.3.0)
 - [ ] Frame editing with duration visuals (experimental)
 - [ ] GUI Companion (Tauri, optional)
 
@@ -123,6 +187,14 @@ Wanna help? Fork, clone, and PRs welcome. You can also suggest Codex tasks or op
 - [Crates.io](https://crates.io/crates/gifmeta)
 - [Documentation (coming soon)](https://docs.rs/gifmeta)
 - [GitHub](https://github.com/madspaaskesen/gifmeta)
+
+---
+
+## 🛠 Built With
+
+- [gif](https://docs.rs/gif/)
+- Rust 2021
+- Love, frustration, and sacred formatting
 
 ---
 

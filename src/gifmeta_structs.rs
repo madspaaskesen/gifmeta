@@ -1,9 +1,11 @@
+use serde::Serialize;
+
 // Define a basic GifError type if not already defined elsewhere
 #[derive(Debug)]
 pub struct GifError(pub String);
 
 /// Metadata summary for a GIF file.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct GifMetadata {
     pub width: u16,
     pub height: u16,
@@ -17,7 +19,7 @@ pub struct GifMetadata {
 }
 
 /// Metadata for an individual frame.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct FrameMeta {
     pub index: usize,
     pub delay_cs: u16,

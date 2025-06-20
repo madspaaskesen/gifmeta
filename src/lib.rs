@@ -23,33 +23,7 @@ pub fn get_metadata(
     show_frames: bool,
 ) -> Result<gifmeta_structs::GifMetadata, String> {
     match commands::info::get_metadata(path) {
-        Ok(meta) => {
-            println!("✅ Metadata for : {}\n", path.display());
-            println!("🖼️ Dimensions   : {} × {}", meta.width, meta.height);
-            println!("🖼️ Frame count  : {}", meta.frame_count);
-            println!("⏱️ Duration     : {} centiseconds", meta.total_duration_cs);
-            println!("🔄Loop         : {:?}", meta.loop_count);
-            println!("🎨Has palette  : {:?}", meta.has_global_palette);
-            println!("🎨Palette size : {:?}", meta.global_palette_size.unwrap());
-            println!("🎨Transparency : {:?}", meta.uses_transparency);
-
-            if show_frames {
-                println!("\n🧩Frame delays :");
-                for frame in &meta.frames {
-                    println!(
-                        "  • Frame {:>3}: {:>4} cs{}",
-                        frame.index,
-                        frame.delay_cs,
-                        match frame.transparent_index {
-                            Some(idx) => format!(" (transparent index: {})", idx),
-                            None => "".to_string(),
-                        }
-                    );
-                }
-            }
-
-            Ok(meta)
-        }
+        Ok(meta) => Ok(meta),
         Err(e) => Err(e),
     }
 }
