@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use gif::{DecodeOptions, Encoder, Repeat};
 use uuid::Uuid;
 
+use crate::loop_count::set_loop_count;
+
 //use crate::commands::info;
 //use crate::gifmeta_structs::{FrameMeta, GifMetadata};
 
@@ -87,6 +89,10 @@ pub fn apply_modifications(
             .map_err(|e| format!("Frame write error: {}", e))?;
 
         index += 1;
+    }
+
+    if let Some(count) = loop_count {
+        set_loop_count(&input, count, output)?;
     }
 
     println!("✅ Modifications applied → {}", out_path.display());

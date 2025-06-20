@@ -49,7 +49,7 @@ pub fn get_metadata(path: &Path) -> Result<gifmeta_structs::GifMetadata, String>
         total_duration += frame.delay as u32;
     }
 
-    let loop_count = loop_count::extract_loop_count(path).unwrap_or(1);
+    let loop_count = loop_count::extract_loop_count(path).unwrap_or(0);
 
     Ok(gifmeta_structs::GifMetadata {
         width: reader.width(),
