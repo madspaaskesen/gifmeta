@@ -4,7 +4,7 @@ use std::io::BufReader;
 use std::path::Path;
 
 use crate::gifmeta_structs;
-use crate::loop_count;
+use crate::utils::loop_count;
 
 /// Extracts GIF metadata (dimensions, frame count, duration).
 ///

@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use gif::{DecodeOptions, Encoder, Repeat};
 use uuid::Uuid;
 
-use crate::loop_count::set_loop_count;
+use crate::utils::loop_count::set_loop_count;
 
 //use crate::commands::info;
 //use crate::gifmeta_structs::{FrameMeta, GifMetadata};

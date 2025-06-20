@@ -3,7 +3,7 @@ pub mod commands;
 use std::{collections::HashMap, path::PathBuf};
 
 pub mod gifmeta_structs;
-pub mod loop_count;
+pub mod utils;
 
 /// Prints detailed metadata about the provided GIF file.
 ///
@@ -16,7 +16,7 @@ pub mod loop_count;
 /// # Example
 /// ```
 /// use gifmeta::get_metadata;
-/// get_metadata(&std::path::PathBuf::from("tests/testdata/1.gif"));
+/// get_metadata(&std::path::PathBuf::from("tests/testdata/loop/1.gif"), false);
 /// ```
 pub fn get_metadata(
     path: &PathBuf,
@@ -88,10 +88,10 @@ pub fn mod_gif(
 /// # Example
 /// ```
 /// use gifmeta::get_loop_count;
-/// get_loop_count(&std::path::PathBuf::from("tests/testdata/2.gif"));
+/// get_loop_count(&std::path::PathBuf::from("tests/testdata/loop/2.gif"));
 /// ```
 pub fn get_loop_count(path: &PathBuf) -> Result<u16, String> {
-    match loop_count::extract_loop_count(path) {
+    match utils::loop_count::extract_loop_count(path) {
         Ok(count) => {
             println!("Loop count: {}", count);
             Ok(count)
@@ -124,7 +124,7 @@ pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) -> R
         "(stub) Setting delay {} for: {:?} → {:?}",
         delay, path, output
     );
-    match commands::set_frame_delay::set_frame_delay(path, delay, output) {
+    match utils::set_frame_delay::set_frame_delay(path, delay, output) {
         Ok(_) => {
             println!("New delay: {} saved to: {:?}", delay, output_clone);
             Ok(delay)
@@ -149,11 +149,11 @@ pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) -> R
 /// # Example
 /// ```
 /// use gifmeta::set_loop_count;
-/// set_loop_count(&"tests/testdata/2.gif".into(), 3, None);
+/// set_loop_count(&"tests/testdata/loop/2.gif".into(), 3, None);
 /// ```
 pub fn set_loop_count(path: &PathBuf, count: u16, output: Option<PathBuf>) -> Result<u16, String> {
     let output_clone = output.clone();
-    match loop_count::set_loop_count(path, count, output) {
+    match utils::loop_count::set_loop_count(path, count, output) {
         Ok(_) => {
             println!("New loop count: {} saved to: {:?}", count, output_clone);
             Ok(count)
@@ -182,7 +182,7 @@ pub fn set_loop_count(path: &PathBuf, count: u16, output: Option<PathBuf>) -> Re
 /// # Example
 /// ```
 /// use gifmeta::show_frame_delays;
-/// show_frame_delays(&"tests/testdata/2.gif".into()).unwrap();
+/// show_frame_delays(&"tests/testdata/loop/2.gif".into());
 /// ```
 pub fn show_frame_delays(path: &PathBuf) {
     println!("show_frame_delays {:?}", path);
@@ -211,11 +211,11 @@ pub fn show_frame_delays(path: &PathBuf) {
 /// ```
 /// use gifmeta::set_selected_frame_delays;
 /// set_selected_frame_delays(
-///     &"tests/testdata/2.gif".into(),
+///     &"tests/testdata/loop/2.gif".into(),
 ///     vec![0, 2],
 ///     vec![5, 20],
 ///     Some("out.gif".into())
-/// ).unwrap();
+/// );
 /// ```
 pub fn set_selected_frame_delays(
     input: &PathBuf,

@@ -5,6 +5,7 @@ use std::collections::HashMap;
 ///
 /// # Example
 /// ```
+/// use gifmeta::utils::parse_csv::parse_csv;
 /// let values = parse_csv::<u16>("10,20,30").unwrap();
 /// assert_eq!(values, vec![10, 20, 30]);
 /// ```
