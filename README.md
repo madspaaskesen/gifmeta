@@ -136,12 +136,12 @@ gifmeta mod --input tests/testdata/timing/zero-delay.gif --loop-count 0 --delay 
 
 ---
 
-## 🛠 Commands
+## 🛠️ Commands
 
-+ | Command | Description                                       |
-+ | ------- | ------------------------------------------------- |
-+ | `info`  | Display GIF metadata (dimensions, loop, delays)   |
-+ | `mod`   | Apply metadata modifications (loop/delays/output) |
+| Command | Description |
+|---------|-------------|
+| `info`  | Display GIF metadata (dimensions, loop, delays) |
+| `mod`   | Apply metadata modifications (loop/delays/output) |
 
 ---
 
