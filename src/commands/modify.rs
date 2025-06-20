@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use gif::{DecodeOptions, Encoder, Repeat};
 use uuid::Uuid;
 
+use crate::commands::info;
+
 //use crate::commands::info;
 //use crate::gifmeta_structs::{FrameMeta, GifMetadata};
 
@@ -29,6 +31,10 @@ pub fn apply_modifications(
     output: Option<PathBuf>,
 ) -> Result<(), String> {
     // Load GIF metadata + frames
+    let original_loop_count = info::get_metadata(input, false)
+        .ok()
+        .map(|meta| meta.loop_count)
+        .unwrap_or(1); // fallback if metadata fails
     let file = File::open(input).map_err(|e| format!("Failed to open input: {}", e))?;
     let mut decoder = DecodeOptions::new();
     decoder.set_color_output(gif::ColorOutput::Indexed);
@@ -55,16 +61,13 @@ pub fn apply_modifications(
     .map_err(|e| format!("Encoder init error: {}", e))?;
 
     // Apply loop count if specified
-    if let Some(count) = loop_count {
-        let repeat_mode = if count == 0 {
-            Repeat::Infinite
-        } else {
-            Repeat::Finite(count - 1)
-        };
-        encoder
-            .set_repeat(repeat_mode)
-            .map_err(|e| format!("Set loop error: {}", e))?;
-    }
+    let effective_loop_count = loop_count.unwrap_or(original_loop_count);
+    let repeat_mode = if effective_loop_count == 0 {
+        Repeat::Infinite
+    } else {
+        Repeat::Finite(effective_loop_count - 1)
+    };
+    let _set_repeat = encoder.set_repeat(repeat_mode);
 
     let mut index = 0;
     while let Some(frame) = reader

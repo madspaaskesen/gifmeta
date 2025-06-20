@@ -67,3 +67,38 @@ fn test_set_loop_and_frame_delays() {
 
     
 }
+
+#[test]
+fn test_mod_preserves_loop_count_if_not_specified() {
+    // Arrange
+    let input_path = Path::new("tests/testdata/loop/1.gif");
+    let output_path = Path::new("tests/testdata/loop/loop-infinite-untouched.gif");
+
+    // Clean output
+    if output_path.exists() {
+        fs::remove_file(output_path).unwrap();
+    }
+
+    // Get original loop count
+    let original_meta = gifmeta::get_metadata(&input_path.to_path_buf(), false).unwrap();
+    let original_loop = original_meta.loop_count;
+
+    // Act – only change delay, not loop count
+    let result = gifmeta::mod_gif(
+        &input_path.to_path_buf(),
+        Some(output_path.to_path_buf()),
+        None,                   // <-- no loop count
+        Some(5),                // set uniform delay
+        None,                   // no delay map
+    );
+    assert!(result.is_ok());
+
+    // Assert
+    let modified_meta = gifmeta::get_metadata(&output_path.to_path_buf(), false).unwrap();
+    let modified_loop = modified_meta.loop_count;
+
+    assert_eq!(
+        original_loop, modified_loop,
+        "Loop count should remain unchanged"
+    );
+}
