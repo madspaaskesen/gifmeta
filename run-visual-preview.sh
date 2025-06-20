@@ -15,7 +15,7 @@ mkdir -p "$(dirname "$OUTPUT")"
 mkdir -p "$META_DIR"
 
 # Command to run
-CMD="cargo run --quiet -- mod $INPUT --loop-count 1 --delay 10 --delays 1=20 --output $OUTPUT"
+CMD="cargo run --quiet -- mod $INPUT --loop-count 0 --delay 10 --delays 1=20 --output $OUTPUT"
 
 # Run command
 eval "$CMD"

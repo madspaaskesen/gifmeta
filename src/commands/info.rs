@@ -14,7 +14,7 @@ use crate::utils::loop_count;
 /// # Returns
 /// * `Ok(GifMetadata)` on success
 /// * `Err(String)` if file cannot be read or decoded
-pub fn get_metadata(path: &Path) -> Result<gifmeta_structs::GifMetadata, String> {
+pub fn get_metadata(path: &Path, show_frames: bool) -> Result<gifmeta_structs::GifMetadata, String> {
     let file = File::open(path).map_err(|_| "❌ Failed to open file")?;
     let mut decoder = DecodeOptions::new();
     decoder.set_color_output(gif::ColorOutput::Indexed);
@@ -40,23 +40,30 @@ pub fn get_metadata(path: &Path) -> Result<gifmeta_structs::GifMetadata, String>
             uses_transparency = true;
         }
 
-        frames.push(gifmeta_structs::FrameMeta {
-            index: frame_count,
-            delay_cs: frame.delay,
-            transparent_index: frame.transparent,
-        });
+        if show_frames {
+            frames.push(gifmeta_structs::FrameMeta {
+                index: frame_count,
+                delay_cs: frame.delay,
+                transparent_index: frame.transparent,
+            });
+        }
+        
         frame_count += 1;
         total_duration += frame.delay as u32;
     }
 
     let loop_count = loop_count::extract_loop_count(path).unwrap_or(0);
+    let display_loop_count = match loop_count {
+        0 => 0,         // Infinite looping (by GIF standard)
+        n => n + 1,     // Normalize to user-facing loop count
+    };
 
     Ok(gifmeta_structs::GifMetadata {
         width: reader.width(),
         height: reader.height(),
         frame_count: frame_count.try_into().unwrap(),
         total_duration_cs: total_duration,
-        loop_count: loop_count,
+        loop_count: display_loop_count,
         frames: frames,
         has_global_palette: has_global_palette,
         global_palette_size: global_palette_size,

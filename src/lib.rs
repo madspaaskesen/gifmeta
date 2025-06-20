@@ -22,7 +22,7 @@ pub fn get_metadata(
     path: &PathBuf,
     show_frames: bool,
 ) -> Result<gifmeta_structs::GifMetadata, String> {
-    match commands::info::get_metadata(path) {
+    match commands::info::get_metadata(path, show_frames) {
         Ok(meta) => Ok(meta),
         Err(e) => Err(e),
     }

@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 pub mod utils;
-use serde::Serialize;
 
 #[derive(Parser)]
 #[command(name = "gifmeta", version, about = "Inspect and edit GIF metadata")]
@@ -15,7 +14,7 @@ enum Commands {
     /// Show metadata
     Info {
         /// Path to the GIF file
-        #[arg()]
+        #[arg(value_name = "INPUT")]
         path: PathBuf,
 
         /// Show per-frame delay information
@@ -29,7 +28,7 @@ enum Commands {
 
     /// Modify GIF file
     Mod {
-        #[arg()]
+        #[arg(value_name = "INPUT")]
         input: PathBuf,
 
         #[arg(long)]

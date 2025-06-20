@@ -1,4 +1,3 @@
-use gifmeta::utils::loop_count::extract_loop_count;
 use std::fs;
 use std::path::Path;
 // use gifmeta::parse_csv; // Removed because there is no parse_csv in the root
@@ -57,10 +56,14 @@ fn test_set_loop_and_frame_delays() {
     let result = mod_gif(&input_pathbuf, Some(output_pathbuf.clone()), Some(3), Some(4), delays_map);
     assert!(result.is_ok());
 
-    // Assert – verify loop count
-    let loop_count = extract_loop_count(output_path).unwrap();
-    assert_eq!(loop_count, 3, "Expected loop count to be 0 (infinite)");
-
     // Optionally: check that file exists
     assert!(output_path.exists(), "Output file should be created");
+
+    // Assert – verify loop count
+    let output_result = gifmeta::get_metadata(&output_pathbuf.clone(), false);
+    let output_data = output_result.ok();
+    let loop_count = output_data.unwrap().loop_count;
+    assert_eq!(loop_count, 3, "Expected loop count to be 0 (infinite)");
+
+    
 }
