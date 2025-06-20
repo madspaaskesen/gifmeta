@@ -9,7 +9,7 @@ It’s designed for developers, artists, and anyone needing **loop control** and
 [![Downloads](https://img.shields.io/crates/d/gifmeta.svg)](https://crates.io/crates/gifmeta)
 [![License](https://img.shields.io/crates/l/gifmeta.svg)](https://crates.io/crates/gifmeta)
 [![CI](https://img.shields.io/github/actions/workflow/status/madspaaskesen/gifmeta/ci.yml)](https://github.com/madspaaskesen/gifmeta)
-![Tests](https://img.shields.io/badge/tests-22_passed-green)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)
 
 ---
 
