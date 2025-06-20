@@ -5,6 +5,12 @@ It’s designed for developers, artists, and anyone needing **loop control** and
 
 > ❤️ Built with Rust. Sacredly simple. Zero bloat.
 
+[![Crates.io](https://img.shields.io/crates/v/gifmeta.svg)](https://crates.io/crates/gifmeta)
+[![Downloads](https://img.shields.io/crates/d/gifmeta.svg)](https://crates.io/crates/gifmeta)
+[![License](https://img.shields.io/crates/l/gifmeta.svg)](https://crates.io/crates/gifmeta)
+[![CI](https://img.shields.io/github/actions/workflow/status/madspaaskesen/gifmeta/ci.yml)](https://github.com/madspaaskesen/gifmeta)
+![Tests](https://img.shields.io/badge/tests-22_passed-green)
+
 ---
 
 ## 🧍‍♂️ Why I Built This
@@ -13,6 +19,10 @@ Because changing loop count or frame delays in GIFs was a pain.
 
 Most tools were too heavy, too raw, or lacked reliable preview/testing.  
 `gifmeta` was born to fix that — with precise CLI commands, minimalism, and full test coverage.
+
+![Rust](https://img.shields.io/badge/built_with-rust-orange)
+![FFmpeg](https://img.shields.io/badge/rendered_by-ffmpeg-blue)
+[![SacredAI](https://img.shields.io/badge/powered%20by-%F0%9F%95%8A%EF%B8%8F%20Sacred%20AI-lightgrey)](https://sacre-ai.com)
 
 ---
 
@@ -82,6 +92,38 @@ cd gifmeta
 cargo build --release
 ./target/release/gifmeta --help
 ```
+
+Absolutely. Here’s a clean and helpful section you can add to your `README.md` under the **Installation** section:
+
+---
+
+### 🧰 Installation
+
+Download the binary for your platform from the [latest release](https://github.com/madspaaskesen/gifmeta/releases).
+
+#### ✅ macOS Users
+
+If you see a warning when trying to run `gifmeta`, macOS may have quarantined the file because it's unsigned.
+
+**To allow execution:**
+
+```bash
+xattr -d com.apple.quarantine gifmeta
+chmod +x gifmeta
+```
+
+Then run it with:
+
+```bash
+./gifmeta info yourfile.gif
+```
+
+> You only need to do this once per download. After this, `gifmeta` will run normally.
+
+---
+
+Let me know if you want the same clarity for Windows (e.g., SmartScreen warnings) or Linux permissions 💛
+
 
 ---
 
