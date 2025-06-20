@@ -10,7 +10,7 @@ homepage = "https://sacred-ai.com/about/gifmeta"
 documentation = "https://docs.rs/gifmeta"
 readme = "README.md"
 categories = ["command-line-utilities", "multimedia::images"]
-keywords = ["gif", "metadata", "cli", "loop", "delay", "animation"]
+keywords = ["gif", "metadata", "cli", "loop", "delay"]
 
 [dependencies]
 gif = "0.12.0"
