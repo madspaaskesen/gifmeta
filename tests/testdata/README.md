@@ -69,15 +69,34 @@ These files represent rare or tool-specific behavior and will be added later:
 
 ---
 
-## 🛠 How to Regenerate All Test Files
+## 🛠 How to Regenerate and Inspect Test GIFs
 
-Run the script from the root folder:
+### 🔁 Regenerate All Automatable Test Files
+
+Run from the root folder:
 
 ```bash
-./create-tests.sh
+./run-create-tests.sh
 ```
 
-This will safely regenerate all automatable test files without overwriting external ones.
+This will safely regenerate all automatable test files under `tests/testdata/`
+It will not overwrite manually-added or external test files.
+
+---
+
+### 🔍 Run `gifmeta` Info on All Test GIFs
+
+Run from the root folder:
+
+```bash
+./run-info-all.sh
+```
+
+This will display frame and metadata info for every test GIF using:
+
+```bash
+cargo run -- info <gif> --show-frames
+```
 
 ---
 
