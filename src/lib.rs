@@ -222,8 +222,9 @@ pub fn set_selected_frame_delays(
 /// # Example
 ///
 /// ```rust
-/// let png_data = get_frame_image("tests/testdata/1.gif".into(), 0)?;
-/// std::fs::write("frame0.png", png_data)?;
+/// use gifmeta::get_frame_image;
+/// let png_data = get_frame_image("tests/testdata/loop/2.gif".into(), 0).unwrap();
+/// std::fs::write("tests/output/frame0.png", &png_data).unwrap();
 /// ```
 pub fn get_frame_image(path: String, frame: usize) -> Result<Vec<u8>, String> {
     utils::extract_frame_as_png::extract_frame_as_png(&path, frame)

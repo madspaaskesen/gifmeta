@@ -20,3 +20,4 @@ uuid = { version = "1.17.0", features = ["v4"] }
 serde_json = "1.0.140"
 serde = { version = "1.0.219", features = ["derive"] }
 image = { version = "0.25.6", features = ["png"] }
+base64 = "0.22.1"
