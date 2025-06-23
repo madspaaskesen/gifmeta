@@ -203,3 +203,28 @@ pub fn set_selected_frame_delays(
         input, frame_numbers, delay_values, output
     );
 }
+
+/// Extracts a single frame from a GIF and returns it as PNG-encoded bytes.
+///
+/// This function loads the specified frame from the GIF file at `path`,
+/// encodes it as a PNG image in memory, and returns the result as a `Vec<u8>`.
+///
+/// # Arguments
+///
+/// * `path` - Path to the `.gif` file
+/// * `frame` - Zero-based index of the frame to extract
+///
+/// # Returns
+///
+/// * `Ok(Vec<u8>)` - PNG-encoded image data of the frame
+/// * `Err(String)` - Error message if the file cannot be read, decoded, or the frame is out of bounds
+///
+/// # Example
+///
+/// ```rust
+/// let png_data = get_frame_image("tests/testdata/1.gif".into(), 0)?;
+/// std::fs::write("frame0.png", png_data)?;
+/// ```
+pub fn get_frame_image(path: String, frame: usize) -> Result<Vec<u8>, String> {
+    utils::extract_frame_as_png::extract_frame_as_png(&path, frame)
+}
