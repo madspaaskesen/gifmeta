@@ -32,6 +32,7 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 - ⏱️ Apply fixed delay to all frames (`--delay`)
 - 🎯 Set specific frame delays (`--delays 1=30,4=60`)
 - 📤 Output JSON metadata (`--json`)
+- 🖼️ Extract any frame as PNG (to file or base64)
 - 🧪 CLI + doc tests for core functions
 - 🖼️ Side-by-side **visual preview reports** via `run-visual-preview.sh`
 
@@ -176,14 +177,34 @@ gifmeta mod --input tests/testdata/timing/zero-delay.gif --delay 15 --delays "0=
 gifmeta mod --input tests/testdata/timing/zero-delay.gif --loop-count 0 --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified4.gif
 ```
 
+### 🖼️ Preview a GIF Frame as PNG
+
+You can now extract a specific frame from any GIF and output it as a PNG image — either as a file or directly as base64 for web previews:
+
+#### 🔹 Output frame 0 as PNG to a file
+
+```bash
+gifmeta preview --input path/to/input.gif --frame 0 --output frame0.png
+```
+
+#### 🔹 Output frame 3 as base64 (for GUI, web, etc.)
+
+```bash
+gifmeta preview --input path/to/input.gif --frame 3 --as-base64
+```
+
+> If `--frame` is omitted, it defaults to the first frame (`0`).
+> You must specify either `--as-base64` or `--output`.
+
 ---
 
 ## 🛠️ Commands
 
-| Command | Description |
-|---------|-------------|
-| `info`  | Display GIF metadata (dimensions, loop, delays) |
-| `mod`   | Apply metadata modifications (loop/delays/output) |
+| Command   | Description                                       |
+| --------- | ------------------------------------------------- |
+| `info`    | Display GIF metadata (dimensions, loop, delays)   |
+| `mod`     | Apply metadata modifications (loop/delays/output) |
+| `preview` | Extract a single frame as PNG (file or base64)    |
 
 ---
 
