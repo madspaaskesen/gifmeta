@@ -137,7 +137,7 @@ fn main() {
                 Ok(png_bytes) => {
                     if as_base64 {
                         let encoded = base64::engine::general_purpose::STANDARD.encode(&png_bytes);
-                        println!("{}", encoded);
+                        println!("data:image/png;base64,{}", encoded);
                     } else if let Some(out_path) = output {
                         std::fs::write(&out_path, png_bytes).expect("Failed to write output PNG");
                         println!("Frame {} written to {}", frame_index, out_path.display());
