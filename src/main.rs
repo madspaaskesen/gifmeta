@@ -1,5 +1,6 @@
+use base64::engine::Engine;
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::path::PathBuf; // Import the Engine trait for encode()
 pub mod utils;
 
 #[derive(Parser)]
@@ -135,7 +136,7 @@ fn main() {
             match gifmeta::get_frame_image(input.to_string_lossy().to_string(), frame_index) {
                 Ok(png_bytes) => {
                     if as_base64 {
-                        let encoded = base64::encode(png_bytes);
+                        let encoded = base64::engine::general_purpose::STANDARD.encode(&png_bytes);
                         println!("{}", encoded);
                     } else if let Some(out_path) = output {
                         std::fs::write(&out_path, png_bytes).expect("Failed to write output PNG");
