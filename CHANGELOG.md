@@ -4,6 +4,45 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
+## [0.4.1] ✨ 2025-06-25 - Hotfix keep dimenstion for transparent images
+
+- Fixed preview frame rendering for transparent images 🧙‍♂️✨
+- Preview images now preserve full canvas dimensions with proper composite layering
+- Verified with CLI and test suite
+
+---
+
+## [0.4.0] ✨ gifmeta v0.4.0 – Frame by Frame
+
+This release introduces the ability to **extract any frame from a GIF** as a PNG — with support for:
+
+* ✅ Output to file (`--output frame.png`)
+* ✅ Output as base64 (`--as-base64`) for web previews or GUI tools
+* ✅ Fully in-memory processing (no temp files)
+* ✅ Doc-tested + integration-tested for accuracy and safety
+
+### ✅ Also includes
+* Updated README with usage examples
+* Feature added to the `--help` CLI
+* Internal helper: `extract_frame_as_png(path, frame)`
+* Doc test now verifies PNG header and writes file
+* Version bumped to `0.4.0` on crates.io 🎉
+
+---
+
+## [0.3.0] ✨ gifmeta v0.3.0 — Sacred CLI for GIF Metadata
+
+This release marks a meaningful evolution of `gifmeta`, now with test coverage, visual previews, and multi-platform binaries.
+
+### 🌟 Highlights
+- 🌀 Modify GIF loop count and frame delays with a single command
+- 🧠 Smart delay editing using frame-index maps
+- 🧪 CI-integrated test suite with HTML previews
+- 📦 Prebuilt binaries for macOS, Windows, and Linux
+- ⚙️ New `--json` flag for structured output
+
+---
+
 ## [0.2.0] – 2025-06-14
 
 ✨ First meaningful release
