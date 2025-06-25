@@ -11,6 +11,7 @@ documentation = "https://docs.rs/gifmeta"
 readme = "README.md"
 categories = ["command-line-utilities", "multimedia::images"]
 keywords = ["gif", "metadata", "cli", "loop", "delay"]
+exclude = [".DS_Store"]
 
 [dependencies]
 gif = "0.12.0"
