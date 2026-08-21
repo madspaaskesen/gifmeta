@@ -23,6 +23,7 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 ![Rust](https://img.shields.io/badge/built_with-rust-orange)
 ![FFmpeg](https://img.shields.io/badge/rendered_by-ffmpeg-blue)
 [![SacredAI](https://img.shields.io/badge/powered%20by-%F0%9F%95%8A%EF%B8%8F%20Sacred%20AI-lightgrey)](https://sacre-ai.com)
+[![mySiteChart](https://badges.mysitechart.com/github-project/madspaaskesen/gifmeta?site=COM)](https://mysitechart.com/In?github-project=madspaaskesen%2Fgifmeta)
 
 ---
 
