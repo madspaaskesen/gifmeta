@@ -13,3 +13,8 @@ __MACOSX/
 # temporary files
 #/tests/testdata/1.gif
 #/tests/testdata/2.gif
+# test output (written by cargo test / run-visual-preview.sh)
+/tests/output/
+/tests/visual/
+/tests/testdata/**/modified-*.gif
+/tests/testdata/loop/loop-infinite-untouched.gif
