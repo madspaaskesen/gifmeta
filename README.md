@@ -202,6 +202,16 @@ gifmeta preview --input path/to/input.gif --frame 0 --output frame0.png
 gifmeta preview --input path/to/input.gif --frame 3 --as-base64
 ```
 
+#### 🔹 Raw view of a delta frame
+
+By default the preview shows the frame **as it looks when the GIF plays** (earlier frames are
+composited with the correct disposal + transparency). Add `--raw` to see only the pixels stored
+in that frame — handy for inspecting frame-optimized GIFs:
+
+```bash
+gifmeta preview path/to/input.gif --frame 1 --raw --output frame1-raw.png
+```
+
 > If `--frame` is omitted, it defaults to the first frame (`0`).
 > You must specify either `--as-base64` or `--output`.
 

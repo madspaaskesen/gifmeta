@@ -27,7 +27,8 @@ src/commands/info.rs        get_metadata: decode, count frames, sum delays, pale
 src/commands/modify.rs      apply_modifications: decode → re-encode with new loop/delays
 src/utils/loop_count.rs     raw byte scan/patch of the NETSCAPE2.0 block
 src/utils/set_frame_delay.rs  older standalone "delay all" re-encoder
-src/utils/extract_frame_as_png.rs  composite frames onto RGBA canvas → PNG bytes
+src/utils/render.rs           disposal-aware renderer: render_frame(path, i, PreviewMode::{Composited,Raw})
+src/utils/extract_frame_as_png.rs  render → PNG bytes (pretty by default, raw via _with_mode)
 src/utils/frame_analysis.rs   KeyframeTracker: 🔑 keyframe vs Δ delta detection (dirty-area rule)
 src/utils/parse_csv.rs      "1=10,5=20" → HashMap<usize,u16>
 tests/*.rs                  integration tests; fixtures in tests/testdata/{loop,color,timing,transparency,layout,optimize}
@@ -38,7 +39,8 @@ docs/FRAME_EDITING_PLAN.md  roadmap for frame editing (detect → GUI → render
 ## Public API (src/lib.rs)
 - `get_metadata(&PathBuf, show_frames) -> Result<GifMetadata, String>` — `frames` is only filled when `show_frames` is true.
 - `mod_gif(input, output: Option<PathBuf>, loop_count, delay_all, delays: Option<HashMap<usize,u16>>)` — errors if nothing to change.
-- `get_frame_image(path: String, frame) -> Result<Vec<u8>, String>` — PNG bytes, full-canvas composite.
+- `get_frame_image(path: String, frame) -> Result<Vec<u8>, String>` — PNG bytes, full-canvas composite ("pretty").
+- `get_frame_image_with_mode(path, frame, PreviewMode)` — `Composited` (pretty) or `Raw` (only the frame's own pixels). CLI: `preview --raw`.
 - `get_loop_count`, `set_loop_count`, `set_frame_delay` — older helpers that also `println!`.
 - `show_frame_delays`, `set_selected_frame_delays` — **stubs**, only print.
 
@@ -55,7 +57,7 @@ stdout/stderr — keep that in mind, the GUI calls them too.
   `set_frame_delay` with `None` DOES overwrite the input (tempfile + rename).
 - Re-encoding (`modify.rs`) decodes with `ColorOutput::Indexed` and clones each `gif::Frame`, so local
   palettes, disposal, offsets and transparency are preserved. Keep it that way — never decode to RGBA for writing.
-- `extract_frame_as_png` composites frames naively (no disposal-method handling, transparent pixels overwrite).
+- Previews go through `utils/render.rs` (handles Keep/Background/Previous, skips transparent pixels). Verified pixel-identical to ImageMagick `-coalesce`.
 - Doctests have side effects: `set_loop_count` doctest rewrites `tests/testdata/loop/2.gif` (loop=3);
   `get_frame_image` doctest writes `tests/output/frame0.png`. Integration tests write `modified-*.gif` into testdata.
   Check `git status` after `cargo test` and don't commit those by accident.

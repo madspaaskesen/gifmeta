@@ -64,6 +64,11 @@ enum Commands {
         #[arg(long)]
         as_base64: bool,
 
+        /// Raw view: only the pixels stored in this frame (no earlier frames composited).
+        /// Default is the "pretty" view — the frame as it looks when the GIF plays.
+        #[arg(long)]
+        raw: bool,
+
         /// Path to save the extracted PNG frame (e.g. frame0.png)
         #[arg(short, long, value_name = "FILE")]
         output: Option<PathBuf>,
@@ -142,10 +147,20 @@ fn main() {
             input,
             frame,
             as_base64,
+            raw,
             output,
         } => {
             let frame_index = frame.unwrap_or(0) as usize;
-            match gifmeta::get_frame_image(input.to_string_lossy().to_string(), frame_index) {
+            let mode = if raw {
+                gifmeta::PreviewMode::Raw
+            } else {
+                gifmeta::PreviewMode::Composited
+            };
+            match gifmeta::get_frame_image_with_mode(
+                input.to_string_lossy().to_string(),
+                frame_index,
+                mode,
+            ) {
                 Ok(png_bytes) => {
                     if as_base64 {
                         let encoded = base64::engine::general_purpose::STANDARD.encode(&png_bytes);

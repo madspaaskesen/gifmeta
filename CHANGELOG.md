@@ -12,6 +12,11 @@ All notable changes to **gifmeta** will be documented here.
 - New JSON fields: `keyframe_count`, `is_delta_optimized`, and per frame `left`, `top`, `width`,
   `height`, `disposal`, `uses_transparent_pixels`, `is_keyframe` (additive, non-breaking)
 - Fixed panic in `info` for GIFs without a global palette
+- 🖼️ **Correct frame previews for optimized GIFs**: new disposal-aware renderer composites earlier
+  frames (Keep / Background / Previous) and no longer lets transparent pixels punch holes —
+  verified pixel-identical to ImageMagick `-coalesce`
+- `preview --raw`: show only the pixels stored in a frame (what a delta frame actually contains)
+- New lib API: `get_frame_image_with_mode(path, frame, PreviewMode::{Composited, Raw})`
 - New test fixtures in `tests/testdata/optimize/`
 - Plan for frame editing: `docs/FRAME_EDITING_PLAN.md`
 

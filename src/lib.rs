@@ -229,3 +229,30 @@ pub fn set_selected_frame_delays(
 pub fn get_frame_image(path: String, frame: usize) -> Result<Vec<u8>, String> {
     utils::extract_frame_as_png::extract_frame_as_png(&path, frame)
 }
+
+/// Like [`get_frame_image`], but lets you choose how the frame is rendered.
+///
+/// * [`PreviewMode::Composited`] – "pretty" view: the frame as it looks when the GIF plays.
+/// * [`PreviewMode::Raw`] – "raw" view: only the pixels stored in this frame, at its position
+///   on a transparent canvas. Useful to see what a delta frame of an optimized GIF contains.
+///
+/// # Example
+///
+/// ```rust
+/// use gifmeta::{get_frame_image_with_mode, PreviewMode};
+/// let png = get_frame_image_with_mode(
+///     "tests/testdata/optimize/moving-square-optimized.gif".into(),
+///     1,
+///     PreviewMode::Raw,
+/// ).unwrap();
+/// assert_eq!(&png[0..8], b"\x89PNG\r\n\x1a\n");
+/// ```
+pub fn get_frame_image_with_mode(
+    path: String,
+    frame: usize,
+    mode: PreviewMode,
+) -> Result<Vec<u8>, String> {
+    utils::extract_frame_as_png::extract_frame_as_png_with_mode(&path, frame, mode)
+}
+
+pub use utils::render::PreviewMode;

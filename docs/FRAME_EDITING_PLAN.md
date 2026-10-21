@@ -68,9 +68,11 @@ Pure analysis, no file changes. `commands/info.rs` feeds each frame into
 - Bump GUI dep (while developing: temporary `gifmeta = { path = "../../gifmeta" }`, do not commit).
 - Frame list: small 🔑 / Δ badge per frame.
 - Status bar: `Optimized: 3/10 keyframes`.
+- FrameViewer toggle **Pretty / Raw** (new Tauri command param `raw: bool` → `get_frame_image_with_mode`);
+  raw view on a checkerboard so transparency is visible. Cache images per mode.
 - FrameViewer: rect (`left,top width×height`), disposal, keyframe yes/no.
 
-### Phase 3 — Correct canvas renderer ⬜ (prerequisite for 4–6)
+### Phase 3 — Correct canvas renderer ✅ (unreleased) (prerequisite for 4–6)
 A single disposal-aware compositor in the crate that replays the animation and yields the true
 RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize.
 - Handle `Keep/Any`, `Background` (clear only the frame's rect), `Previous` (snapshot/restore).
@@ -78,6 +80,11 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 - Replace the naive loop in `utils/extract_frame_as_png.rs` → previews of optimized GIFs become correct.
 - Tests: compare rendered frames of an optimized fixture against the un-optimized source
   (`convert -coalesce`) pixel-for-pixel.
+- Done: `src/utils/render.rs` (`render_frame(path, index, PreviewMode)`), `tests/render.rs`.
+  Also verified on the 40-frame `forge-preview.gif` (800×516, 5 MB — too big for the repo):
+  0 differing pixels vs ImageMagick `-coalesce` on frames 1, 20, 39.
+- Bonus: `PreviewMode::Raw` / `preview --raw` shows only the pixels stored in a frame.
+  GUI: add a "Pretty / Raw" toggle in FrameViewer (Phase 2), raw view on a checkerboard background.
 
 ### Phase 4 — Convert a frame to a full image ("re-key") ⬜
 - Crate: `mod --keyframe 3,7` / lib `keyframes: Option<Vec<usize>>`.
@@ -145,8 +152,8 @@ Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo t
 - **Loop-count semantics are inconsistent:** `info`/`mod` use user-facing counts (N+1), while
   `set_loop_count` writes the raw value.
 - `extract_loop_count` reads `buffer[i+1]` / `buffer[i+3..i+14]` without bounds checks → can panic on truncated files.
-- `extract_frame_as_png` ignores disposal and lets transparent pixels overwrite the canvas → wrong
-  previews for optimized GIFs (fixed in Phase 3).
+- ~~`extract_frame_as_png` ignores disposal and lets transparent pixels overwrite the canvas → wrong
+  previews for optimized GIFs~~ — fixed in Phase 3.
 - `mod` without `--output` writes to `$TMPDIR/<uuid>.mod.gif` (not documented); `set_frame_delay`
   without output overwrites the input — inconsistent.
 - README examples use `--input`, but INPUT is positional.
