@@ -4,6 +4,19 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
+## [Unreleased] 🧩 Delta-frame detection
+
+- `info` now detects **frame-optimized GIFs** (frames that only store changes since earlier frames)
+- New summary line: `🧩 Optimized : yes (1 keyframes / 5 frames)`
+- `--show-frames` marks each frame 🔑 keyframe / Δ delta and shows its rect + disposal method
+- New JSON fields: `keyframe_count`, `is_delta_optimized`, and per frame `left`, `top`, `width`,
+  `height`, `disposal`, `uses_transparent_pixels`, `is_keyframe` (additive, non-breaking)
+- Fixed panic in `info` for GIFs without a global palette
+- New test fixtures in `tests/testdata/optimize/`
+- Plan for frame editing: `docs/FRAME_EDITING_PLAN.md`
+
+---
+
 ## [0.4.1] ✨ 2025-06-25 - Hotfix keep dimenstion for transparent images
 
 - Fixed preview frame rendering for transparent images 🧙‍♂️✨

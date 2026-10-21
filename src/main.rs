@@ -93,15 +93,27 @@ fn main() {
                     println!("⏱️ Duration     : {} centiseconds", meta.total_duration_cs);
                     println!("🔄Loop         : {:?}", meta.loop_count);
                     println!("🎨Has palette  : {:?}", meta.has_global_palette);
-                    println!("🎨Palette size : {:?}", meta.global_palette_size.unwrap());
+                    println!("🎨Palette size : {}", meta.global_palette_size.unwrap_or(0));
                     println!("🎨Transparency : {:?}", meta.uses_transparency);
+                    println!(
+                        "🧩Optimized    : {} ({} keyframes / {} frames)",
+                        if meta.is_delta_optimized { "yes" } else { "no" },
+                        meta.keyframe_count,
+                        meta.frame_count
+                    );
                     if show_frames {
-                        println!("\n🧩Frame delays :");
+                        println!("\n🧩Frames (🔑 = keyframe, Δ = delta) :");
                         for frame in &meta.frames {
                             println!(
-                                "  • Frame {:>3}: {:>4} cs{}",
+                                "  {} Frame {:>3}: {:>4} cs  rect {},{} {}×{}  dispose {:?}{}",
+                                if frame.is_keyframe { "🔑" } else { "Δ " },
                                 frame.index,
                                 frame.delay_cs,
+                                frame.left,
+                                frame.top,
+                                frame.width,
+                                frame.height,
+                                frame.disposal,
                                 match frame.transparent_index {
                                     Some(idx) => format!(" (transparent index: {})", idx),
                                     None => "".to_string(),

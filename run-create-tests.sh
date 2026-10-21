@@ -9,7 +9,7 @@ TESTDIR="tests/testdata"
 mkdir -p "$TESTDIR"
 
 # Subfolders
-mkdir -p "$TESTDIR"/{loop,color,timing,transparency,layout}
+mkdir -p "$TESTDIR"/{loop,color,timing,transparency,layout,optimize}
 
 # Loop: 2-frame soft loop
 convert -size 100x100 xc:lavender "$TESTDIR/loop/frame1.png"
@@ -56,5 +56,15 @@ convert -size 256x1 gradient: -colors 256 -scale 256x120 "$TESTDIR/color/full-pa
 
 # Layout: odd dimension wide (1x800)
 convert -size 800x1 xc:deepskyblue "$TESTDIR/layout/odd-dimension-wide.gif"
+
+# Optimize: same animation as full frames and as delta-optimized frames
+convert -delay 10 -loop 0 -size 100x100 \
+  \( xc:skyblue -fill tomato -draw "rectangle 5,40 25,60" \) \
+  \( xc:skyblue -fill tomato -draw "rectangle 25,40 45,60" \) \
+  \( xc:skyblue -fill tomato -draw "rectangle 45,40 65,60" \) \
+  \( xc:skyblue -fill tomato -draw "rectangle 65,40 85,60" \) \
+  \( xc:skyblue -fill tomato -draw "rectangle 75,40 95,60" \) \
+  "$TESTDIR/optimize/moving-square-full.gif"
+convert "$TESTDIR/optimize/moving-square-full.gif" -layers Optimize "$TESTDIR/optimize/moving-square-optimized.gif"
 
 echo "✅ Sacred test GIFs created under $TESTDIR"

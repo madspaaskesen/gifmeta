@@ -34,6 +34,7 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 - 🎯 Set specific frame delays (`--delays 1=30,4=60`)
 - 📤 Output JSON metadata (`--json`)
 - 🖼️ Extract any frame as PNG (to file or base64)
+- 🧩 Detect frame-optimized GIFs (🔑 keyframes vs Δ delta frames)
 - 🧪 CLI + doc tests for core functions
 - 🖼️ Side-by-side **visual preview reports** via `run-visual-preview.sh`
 
@@ -152,6 +153,13 @@ gifmeta info --input tests/testdata/loop/10frame-rainbow.gif
 ```bash
 gifmeta info --input tests/testdata/loop/10frame-rainbow.gif --json
 ```
+
+### Detect delta-optimized frames
+```bash
+gifmeta info tests/testdata/optimize/moving-square-optimized.gif --show-frames
+```
+Shows `🧩 Optimized : yes (1 keyframes / 5 frames)` and marks every frame 🔑 (keyframe, a full
+image on its own) or Δ (delta frame that only stores changes on top of earlier frames).
 
 ### Modify loop count
 ```bash
