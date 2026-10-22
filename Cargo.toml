@@ -1,6 +1,6 @@
 [package]
 name = "gifmeta"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
 description = "A sacred tool for inspecting and editing GIF metadata from the command line."
@@ -22,3 +22,8 @@ serde_json = "1.0.140"
 serde = { version = "1.0.219", features = ["derive"] }
 image = { version = "0.25.6", features = ["png"] }
 base64 = "0.22.1"
+
+# Optimize dependencies (gif / image decoding) in dev + test builds — keeps `cargo test`
+# fast while our own crate still compiles quickly in debug mode.
+[profile.dev.package."*"]
+opt-level = 3

@@ -35,6 +35,7 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 - 📤 Output JSON metadata (`--json`)
 - 🖼️ Extract any frame as PNG (to file or base64)
 - 🧩 Detect frame-optimized GIFs (🔑 keyframes vs Δ delta frames)
+- ⚡ Render / export all frames in one pass (`--all`, `FrameRenderer`)
 - 🧪 CLI + doc tests for core functions
 - 🖼️ Side-by-side **visual preview reports** via `run-visual-preview.sh`
 
@@ -221,6 +222,26 @@ gifmeta preview path/to/input.gif --frame 1 --raw --output frame1-raw.png
 
 > If `--frame` is omitted, it defaults to the first frame (`0`).
 > You must specify either `--as-base64` or `--output`.
+
+#### 🔹 Export all frames
+
+Render every frame in one fast pass and write them as numbered PNGs:
+
+```bash
+gifmeta preview path/to/input.gif --all --output-dir frames/          # frame_000.png, frame_001.png, …
+gifmeta preview path/to/input.gif --all --output-dir frames-raw/ --raw
+```
+
+#### 🦀 As a library
+
+```rust
+use gifmeta::{FrameRenderer, PreviewMode};
+
+for frame in FrameRenderer::open("input.gif", PreviewMode::Composited)? {
+    let frame = frame?;                       // RenderedFrame { index, delay_cs, image }
+    frame.image.save(format!("frame_{}.png", frame.index))?;
+}
+```
 
 ---
 

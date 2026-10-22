@@ -13,7 +13,11 @@ pub fn extract_frame_as_png_with_mode(
     frame_index: usize,
     mode: PreviewMode,
 ) -> Result<Vec<u8>, String> {
-    let image = render_frame(path, frame_index, mode)?;
+    encode_png(&render_frame(path, frame_index, mode)?)
+}
+
+/// Encodes an RGBA image as PNG bytes.
+pub fn encode_png(image: &image::RgbaImage) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
     image
         .write_to(&mut Cursor::new(&mut buf), image::ImageFormat::Png)

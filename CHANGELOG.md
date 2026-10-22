@@ -4,6 +4,22 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
+## [0.5.1] ⚡ 2026-10-22 - Render all frames in one pass
+
+- New `FrameRenderer`: an iterator that renders every frame in **one pass** (frame *n* builds on
+  frame *n-1*) instead of replaying the animation from the start for each frame
+  - forge-preview.gif (40 frames, 800×516): **2.29 s → 0.15 s**
+  - stars-transparent.gif (150 frames): **31.4 s → 0.56 s** (release build)
+- New lib API: `FrameRenderer::open(path, mode)`, `render_all_frames(path, mode)`,
+  `get_all_frame_images(path, mode)` (PNG bytes), `RenderedFrame { index, delay_cs, image }`
+- `render_frame` now uses the same renderer (one implementation) and skips frames without copies
+- Faster compositing (row-based copies instead of per-pixel writes)
+- CLI: `gifmeta preview in.gif --all --output-dir frames/` exports every frame as `frame_000.png`, … (works with `--raw`)
+- Dev: dependencies are optimized in debug/test builds → `cargo test` is much faster
+- `examples/bench_render.rs` to compare single-pass vs. per-frame rendering
+
+---
+
 ## [0.5.0] 🧩 2026-10-22 - Delta-frame detection, correct previews & clear loop settings
 
 ### 🔄 Loop settings

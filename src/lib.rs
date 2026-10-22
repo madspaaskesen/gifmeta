@@ -290,4 +290,23 @@ pub fn get_frame_image_with_mode(
     utils::extract_frame_as_png::extract_frame_as_png_with_mode(&path, frame, mode)
 }
 
-pub use utils::render::PreviewMode;
+pub use utils::render::{render_all_frames, FrameRenderer, PreviewMode, RenderedFrame};
+
+/// Renders **all** frames in one pass and returns them as PNG bytes, in order.
+///
+/// Much faster than calling [`get_frame_image_with_mode`] for every frame, which replays the
+/// animation from the start each time. Holds all frames in memory — for very large GIFs,
+/// iterate a [`FrameRenderer`] instead.
+///
+/// # Example
+/// ```
+/// use gifmeta::{get_all_frame_images, PreviewMode};
+/// let pngs = get_all_frame_images("tests/testdata/optimize/moving-square-optimized.gif".into(), PreviewMode::Composited).unwrap();
+/// assert_eq!(pngs.len(), 5);
+/// assert_eq!(&pngs[0][0..8], b"\x89PNG\r\n\x1a\n");
+/// ```
+pub fn get_all_frame_images(path: String, mode: PreviewMode) -> Result<Vec<Vec<u8>>, String> {
+    FrameRenderer::open(&path, mode)?
+        .map(|frame| frame.and_then(|f| utils::extract_frame_as_png::encode_png(&f.image)))
+        .collect()
+}

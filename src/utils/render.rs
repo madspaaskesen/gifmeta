@@ -24,28 +24,31 @@ pub enum PreviewMode {
 const CLEAR: Rgba<u8> = Rgba([0, 0, 0, 0]);
 
 /// Draws `frame` (RGBA buffer) onto `canvas` at its offset, skipping transparent pixels.
+/// Works row by row on the raw buffers (no per-pixel bounds checks).
 fn draw(canvas: &mut RgbaImage, frame: &gif::Frame) {
     let (cw, ch) = canvas.dimensions();
+    let (left, top) = (frame.left as u32, frame.top as u32);
+    if left >= cw || top >= ch {
+        return;
+    }
     let fw = frame.width as usize;
-    for y in 0..frame.height as u32 {
-        let cy = frame.top as u32 + y;
-        if cy >= ch {
+    let cols = (frame.width as u32).min(cw - left) as usize;
+    let rows = (frame.height as u32).min(ch - top) as usize;
+    let canvas_stride = cw as usize * 4;
+    let buf: &mut [u8] = canvas.as_mut();
+
+    for y in 0..rows {
+        let src_start = y * fw * 4;
+        let Some(src) = frame.buffer.get(src_start..src_start + cols * 4) else {
             break;
-        }
-        for x in 0..frame.width as u32 {
-            let cx = frame.left as u32 + x;
-            if cx >= cw {
-                break;
-            }
-            let i = (y as usize * fw + x as usize) * 4;
-            let Some(px) = frame.buffer.get(i..i + 4) else {
-                continue;
-            };
+        };
+        let dst_start = (top as usize + y) * canvas_stride + left as usize * 4;
+        let dst = &mut buf[dst_start..dst_start + cols * 4];
+        for (d, s) in dst.chunks_exact_mut(4).zip(src.chunks_exact(4)) {
             // Transparent pixels let the canvas below show through.
-            if px[3] == 0 {
-                continue;
+            if s[3] != 0 {
+                d.copy_from_slice(s);
             }
-            canvas.put_pixel(cx, cy, Rgba([px[0], px[1], px[2], px[3]]));
         }
     }
 }
@@ -53,13 +56,161 @@ fn draw(canvas: &mut RgbaImage, frame: &gif::Frame) {
 /// Clears the frame's rectangle on the canvas (disposal `Background`).
 fn clear_rect(canvas: &mut RgbaImage, frame: &gif::Frame) {
     let (cw, ch) = canvas.dimensions();
-    let right = (frame.left as u32 + frame.width as u32).min(cw);
-    let bottom = (frame.top as u32 + frame.height as u32).min(ch);
-    for y in frame.top as u32..bottom {
-        for x in frame.left as u32..right {
-            canvas.put_pixel(x, y, CLEAR);
-        }
+    let (left, top) = (frame.left as u32, frame.top as u32);
+    if left >= cw || top >= ch {
+        return;
     }
+    let cols = (frame.width as u32).min(cw - left) as usize;
+    let rows = (frame.height as u32).min(ch - top) as usize;
+    let canvas_stride = cw as usize * 4;
+    let buf: &mut [u8] = canvas.as_mut();
+    for y in 0..rows {
+        let start = (top as usize + y) * canvas_stride + left as usize * 4;
+        buf[start..start + cols * 4].fill(0);
+    }
+}
+
+/// One rendered frame from [`FrameRenderer`].
+#[derive(Debug, Clone)]
+pub struct RenderedFrame {
+    /// 0-based frame index.
+    pub index: usize,
+    /// Frame delay in centiseconds (as stored in the file).
+    pub delay_cs: u16,
+    /// Full-canvas RGBA image.
+    pub image: RgbaImage,
+}
+
+/// Renders all frames of a GIF in **one pass** (frame *n* builds on the canvas of frame *n-1*),
+/// instead of replaying the animation from the start for every frame.
+///
+/// It is an iterator, so frames can be processed one at a time without holding all of
+/// them in memory:
+///
+/// ```
+/// use gifmeta::{FrameRenderer, PreviewMode};
+/// let renderer = FrameRenderer::open("tests/testdata/optimize/moving-square-optimized.gif", PreviewMode::Composited).unwrap();
+/// for frame in renderer {
+///     let frame = frame.unwrap();
+///     assert_eq!(frame.image.dimensions(), (100, 100));
+/// }
+/// ```
+pub struct FrameRenderer {
+    reader: gif::Decoder<BufReader<File>>,
+    canvas: RgbaImage,
+    mode: PreviewMode,
+    index: usize,
+    done: bool,
+}
+
+impl FrameRenderer {
+    /// Opens a GIF for rendering in the given mode.
+    pub fn open<P: AsRef<Path>>(path: P, mode: PreviewMode) -> Result<Self, String> {
+        let file = File::open(path).map_err(|e| format!("File open failed: {e}"))?;
+        let mut decoder = DecodeOptions::new();
+        decoder.set_color_output(gif::ColorOutput::RGBA);
+        let reader = decoder
+            .read_info(BufReader::new(file))
+            .map_err(|e| format!("GIF decode failed: {e}"))?;
+        let canvas = RgbaImage::from_pixel(reader.width() as u32, reader.height() as u32, CLEAR);
+        Ok(Self {
+            reader,
+            canvas,
+            mode,
+            index: 0,
+            done: false,
+        })
+    }
+
+    /// Canvas (logical screen) size.
+    pub fn dimensions(&self) -> (u32, u32) {
+        self.canvas.dimensions()
+    }
+}
+
+impl FrameRenderer {
+    /// Decodes the next frame and updates the canvas. Only builds an output image when
+    /// `emit` is true — skipped frames cost no extra copies (used by `nth`).
+    fn advance(&mut self, emit: bool) -> Option<Result<RenderedFrame, String>> {
+        if self.done {
+            return None;
+        }
+        let frame = match self.reader.read_next_frame() {
+            Ok(Some(frame)) => frame,
+            Ok(None) => {
+                self.done = true;
+                return None;
+            }
+            Err(e) => {
+                self.done = true;
+                return Some(Err(format!("Read frame error: {e}")));
+            }
+        };
+
+        let image = match self.mode {
+            // Raw view doesn't depend on earlier frames → skipped frames need no work at all.
+            PreviewMode::Raw => emit.then(|| {
+                let (w, h) = self.canvas.dimensions();
+                let mut raw = RgbaImage::from_pixel(w, h, CLEAR);
+                draw(&mut raw, frame);
+                raw
+            }),
+            PreviewMode::Composited => {
+                // Snapshot before drawing, for disposal `Previous`.
+                let snapshot =
+                    (frame.dispose == DisposalMethod::Previous).then(|| self.canvas.clone());
+                draw(&mut self.canvas, frame);
+                let out = emit.then(|| self.canvas.clone());
+                // Prepare the canvas for the next frame.
+                match frame.dispose {
+                    DisposalMethod::Background => clear_rect(&mut self.canvas, frame),
+                    DisposalMethod::Previous => {
+                        if let Some(s) = snapshot {
+                            self.canvas = s;
+                        }
+                    }
+                    DisposalMethod::Any | DisposalMethod::Keep => {}
+                }
+                out
+            }
+        };
+
+        let index = self.index;
+        self.index += 1;
+        Some(Ok(RenderedFrame {
+            index,
+            delay_cs: frame.delay,
+            image: image.unwrap_or_default(),
+        }))
+    }
+}
+
+impl Iterator for FrameRenderer {
+    type Item = Result<RenderedFrame, String>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.advance(true)
+    }
+
+    /// Skips `n` frames cheaply (no image copies), then renders the next one.
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        for _ in 0..n {
+            match self.advance(false)? {
+                Ok(_) => {}
+                Err(e) => return Some(Err(e)),
+            }
+        }
+        self.advance(true)
+    }
+}
+
+/// Renders every frame of the GIF in one pass. Holds all frames in memory — for large GIFs
+/// prefer iterating a [`FrameRenderer`].
+pub fn render_all_frames<P: AsRef<Path>>(
+    path: P,
+    mode: PreviewMode,
+) -> Result<Vec<RenderedFrame>, String> {
+    FrameRenderer::open(path, mode)?.collect()
 }
 
 /// Renders frame `frame_index` of the GIF at `path` as a full-canvas RGBA image.
@@ -68,50 +219,11 @@ pub fn render_frame<P: AsRef<Path>>(
     frame_index: usize,
     mode: PreviewMode,
 ) -> Result<RgbaImage, String> {
-    let file = File::open(path).map_err(|e| format!("File open failed: {e}"))?;
-    let mut decoder = DecodeOptions::new();
-    decoder.set_color_output(gif::ColorOutput::RGBA);
-    let mut reader = decoder
-        .read_info(BufReader::new(file))
-        .map_err(|e| format!("GIF decode failed: {e}"))?;
-
-    let mut canvas = RgbaImage::from_pixel(reader.width() as u32, reader.height() as u32, CLEAR);
-
-    let mut index = 0;
-    while let Some(frame) = reader
-        .read_next_frame()
-        .map_err(|e| format!("Read frame error: {e}"))?
-    {
-        if index == frame_index {
-            return Ok(match mode {
-                PreviewMode::Composited => {
-                    draw(&mut canvas, frame);
-                    canvas
-                }
-                PreviewMode::Raw => {
-                    let (w, h) = canvas.dimensions();
-                    let mut raw = RgbaImage::from_pixel(w, h, CLEAR);
-                    draw(&mut raw, frame);
-                    raw
-                }
-            });
-        }
-
-        // Only composited mode needs the history, but it is cheap enough to always track.
-        let snapshot = (frame.dispose == DisposalMethod::Previous).then(|| canvas.clone());
-        draw(&mut canvas, frame);
-        match frame.dispose {
-            DisposalMethod::Background => clear_rect(&mut canvas, frame),
-            DisposalMethod::Previous => {
-                if let Some(s) = snapshot {
-                    canvas = s;
-                }
-            }
-            DisposalMethod::Any | DisposalMethod::Keep => {}
-        }
-
-        index += 1;
+    // Raw mode doesn't need earlier frames composited, but they still have to be decoded
+    // to reach the frame — the renderer skips the compositing work for them.
+    let mut renderer = FrameRenderer::open(path, mode)?;
+    match renderer.nth(frame_index) {
+        Some(frame) => frame.map(|f| f.image),
+        None => Err(format!("Frame index {} out of bounds", frame_index)),
     }
-
-    Err(format!("Frame index {} out of bounds", frame_index))
 }

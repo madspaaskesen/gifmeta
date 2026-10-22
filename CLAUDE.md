@@ -1,13 +1,14 @@
 # gifmeta (crate + CLI)
 
 Small Rust crate and CLI for inspecting and editing GIF metadata: loop count, frame delays,
-frame preview as PNG. Published on crates.io (current: **0.5.0**), MIT, edition 2021.
+frame preview as PNG. Published on crates.io (current: **0.5.1**), MIT, edition 2021.
 Consumed by the sibling `../gifmeta-gui` Tauri app.
 
 ## Commands
 ```bash
 cargo build
-cargo test            # integration tests + doctests (all green as of 0.4.1)
+cargo test            # unit + integration tests + doctests (~20 s; deps are optimized in dev via [profile.dev.package."*"])
+cargo run --release --example bench_render -- some.gif   # single-pass vs per-frame rendering
 cargo fmt -- --check  # CI runs this — run `cargo fmt` before committing
 cargo run -- info tests/testdata/loop/10frame-rainbow.gif --show-frames [--json]
 cargo run -- mod  tests/testdata/loop/loop-once.gif --infinite --delay 10 --delays 1=20 -o out.gif   # or --loop-count 3
@@ -27,7 +28,8 @@ src/commands/info.rs        get_metadata: decode, count frames, sum delays, pale
 src/commands/modify.rs      ModOptions + apply(): decode → re-encode with new loop/delays
 src/utils/loop_count.rs     LoopMode read/write: scan/patch/insert/remove the NETSCAPE2.0 block
 src/utils/set_frame_delay.rs  older standalone "delay all" re-encoder
-src/utils/render.rs           disposal-aware renderer: render_frame(path, i, PreviewMode::{Composited,Raw})
+src/utils/render.rs           disposal-aware renderer: FrameRenderer (single-pass iterator), render_all_frames,
+                              render_frame(path, i, PreviewMode::{Composited,Raw}) (uses FrameRenderer::nth)
 src/utils/extract_frame_as_png.rs  render → PNG bytes (pretty by default, raw via _with_mode)
 src/utils/frame_analysis.rs   KeyframeTracker: 🔑 keyframe vs Δ delta detection (dirty-area rule)
 src/utils/parse_csv.rs      "1=10,5=20" → HashMap<usize,u16>
@@ -43,6 +45,9 @@ docs/FRAME_EDITING_PLAN.md  roadmap for frame editing (detect → GUI → render
   — new options go into `ModOptions` (never new positional params). Errors if nothing to change.
 - `LoopMode::{Infinite, Times(n)}` — `Times(1)` = plays once = **no** NETSCAPE block. `get_loop_mode`, `set_loop_mode`.
 - `get_frame_image(path: String, frame) -> Result<Vec<u8>, String>` — PNG bytes, full-canvas composite ("pretty").
+- `FrameRenderer::open(path, mode)` — iterator of `RenderedFrame { index, delay_cs, image }`, one pass over the GIF.
+  `render_all_frames` / `get_all_frame_images` (PNG bytes) collect it. Use these for playback/export — calling
+  `render_frame` per frame is O(n²). CLI: `preview --all --output-dir DIR [--raw]`.
 - `get_frame_image_with_mode(path, frame, PreviewMode)` — `Composited` (pretty) or `Raw` (only the frame's own pixels). CLI: `preview --raw`.
 - Deprecated, kept for compatibility: `mod_gif` (0 = infinite), `utils::loop_count::extract_loop_count`.
 - `get_loop_count`, `set_loop_count` (user-facing: 0 = ∞, n = n times), `set_frame_delay` — older helpers that also `println!`.

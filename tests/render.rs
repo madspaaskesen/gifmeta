@@ -57,3 +57,82 @@ fn background_disposal_clears_between_frames() {
 fn out_of_bounds_frame_errors() {
     assert!(render_frame(OPTIMIZED, 99, PreviewMode::Composited).is_err());
 }
+
+// ---------- FrameRenderer (single pass) ----------
+
+use gifmeta::{get_all_frame_images, render_all_frames, FrameRenderer};
+
+const STARS: &str = "tests/testdata/transparency/stars-transparent.gif";
+const OFFSET: &str = "tests/testdata/layout/offset-frames.gif";
+
+/// The single-pass renderer must give exactly the same pixels as rendering each frame alone.
+/// For long GIFs only every `step`-th frame (+ the last) is compared against the slow path.
+fn assert_renderer_matches_render_frame(path: &str, mode: PreviewMode) {
+    let step = if path == STARS { 10 } else { 1 };
+    let all = render_all_frames(path, mode).unwrap();
+    let meta = gifmeta::get_metadata(&path.into(), true).unwrap();
+    assert_eq!(all.len(), meta.frame_count as usize, "{path}: frame count");
+    for (i, f) in all.iter().enumerate() {
+        assert_eq!(f.index, i);
+        assert_eq!(
+            f.delay_cs, meta.frames[i].delay_cs,
+            "{path}: delay of frame {i}"
+        );
+        if i % step != 0 && i != all.len() - 1 {
+            continue;
+        }
+        let single = render_frame(path, i, mode).unwrap();
+        assert!(f.image == single, "{path} {mode:?}: frame {i} differs");
+    }
+}
+
+#[test]
+fn renderer_matches_render_frame_composited() {
+    for p in [OPTIMIZED, FULL, STARS, OFFSET] {
+        assert_renderer_matches_render_frame(p, PreviewMode::Composited);
+    }
+}
+
+#[test]
+fn renderer_matches_render_frame_raw() {
+    for p in [OPTIMIZED, STARS, OFFSET] {
+        assert_renderer_matches_render_frame(p, PreviewMode::Raw);
+    }
+}
+
+#[test]
+fn renderer_composited_matches_full_frames() {
+    let opt = render_all_frames(OPTIMIZED, PreviewMode::Composited).unwrap();
+    let full = render_all_frames(FULL, PreviewMode::Composited).unwrap();
+    assert_eq!(opt.len(), full.len());
+    for (a, b) in opt.iter().zip(&full) {
+        assert!(
+            a.image == b.image,
+            "frame {} differs from the unoptimized source",
+            a.index
+        );
+    }
+}
+
+#[test]
+fn renderer_is_lazy_and_reports_dimensions() {
+    let mut r = FrameRenderer::open(OPTIMIZED, PreviewMode::Composited).unwrap();
+    assert_eq!(r.dimensions(), (100, 100));
+    assert_eq!(r.next().unwrap().unwrap().index, 0);
+    assert_eq!(r.by_ref().count(), 4);
+    assert!(r.next().is_none(), "iterator stays exhausted");
+}
+
+#[test]
+fn all_frame_images_are_pngs() {
+    let pngs = get_all_frame_images(OPTIMIZED.into(), PreviewMode::Raw).unwrap();
+    assert_eq!(pngs.len(), 5);
+    assert!(pngs.iter().all(|p| p.starts_with(b"\x89PNG\r\n\x1a\n")));
+}
+
+#[test]
+fn missing_file_errors() {
+    assert!(
+        FrameRenderer::open("tests/testdata/does-not-exist.gif", PreviewMode::Composited).is_err()
+    );
+}

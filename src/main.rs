@@ -75,6 +75,14 @@ enum Commands {
         /// Path to save the extracted PNG frame (e.g. frame0.png)
         #[arg(short, long, value_name = "FILE")]
         output: Option<PathBuf>,
+
+        /// Export ALL frames as PNG files into --output-dir (frame_000.png, frame_001.png, …)
+        #[arg(long, requires = "output_dir", conflicts_with_all = ["frame", "as_base64", "output"])]
+        all: bool,
+
+        /// Folder for --all (created if missing)
+        #[arg(long, value_name = "DIR")]
+        output_dir: Option<PathBuf>,
     },
 }
 
@@ -183,6 +191,8 @@ fn main() {
             as_base64,
             raw,
             output,
+            all,
+            output_dir,
         } => {
             let frame_index = frame.unwrap_or(0) as usize;
             let mode = if raw {
@@ -190,6 +200,14 @@ fn main() {
             } else {
                 gifmeta::PreviewMode::Composited
             };
+            if all {
+                let dir = output_dir.expect("clap enforces --output-dir");
+                if let Err(e) = export_all_frames(&input, &dir, mode) {
+                    eprintln!("❌ {}", e);
+                    std::process::exit(1);
+                }
+                return;
+            }
             match gifmeta::get_frame_image_with_mode(
                 input.to_string_lossy().to_string(),
                 frame_index,
@@ -212,4 +230,24 @@ fn main() {
             }
         }
     }
+}
+
+/// Writes every frame of `input` as `frame_000.png`, `frame_001.png`, … into `dir`.
+fn export_all_frames(
+    input: &std::path::Path,
+    dir: &std::path::Path,
+    mode: gifmeta::PreviewMode,
+) -> Result<(), String> {
+    let count = gifmeta::get_metadata(&input.to_path_buf(), false)?.frame_count as usize;
+    let width = count.saturating_sub(1).to_string().len().max(3);
+    std::fs::create_dir_all(dir).map_err(|e| format!("Could not create {}: {e}", dir.display()))?;
+    for frame in gifmeta::FrameRenderer::open(input, mode)? {
+        let frame = frame?;
+        let png = gifmeta::utils::extract_frame_as_png::encode_png(&frame.image)?;
+        let path = dir.join(format!("frame_{:0width$}.png", frame.index, width = width));
+        std::fs::write(&path, png)
+            .map_err(|e| format!("Could not write {}: {e}", path.display()))?;
+    }
+    println!("✅ {} frames written to {}", count, dir.display());
+    Ok(())
 }

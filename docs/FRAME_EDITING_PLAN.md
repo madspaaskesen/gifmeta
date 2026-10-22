@@ -72,7 +72,7 @@ Pure analysis, no file changes. `commands/info.rs` feeds each frame into
   raw view on a checkerboard so transparency is visible. Cache images per mode.
 - FrameViewer: rect (`left,top width×height`), disposal, keyframe yes/no.
 
-### Phase 3 — Correct canvas renderer ✅ (unreleased) (prerequisite for 4–6)
+### Phase 3 — Correct canvas renderer ✅ (0.5.0; single-pass `FrameRenderer` in 0.5.1) (prerequisite for 4–6)
 A single disposal-aware compositor in the crate that replays the animation and yields the true
 RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize.
 - Handle `Keep/Any`, `Background` (clear only the frame's rect), `Previous` (snapshot/restore).
@@ -117,7 +117,7 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 - Maybe later: the reverse (`--optimize`) — out of scope for now, gifsicle does it well.
 
 ### Release plan (proposal)
-- **0.5.0** — Phase 1 (+ Phase 3 if ready) → GUI can ship the markers (Phase 2).
+- ✅ **0.5.0** — Phase 1 + Phase 3 (+ loop fixes). ✅ **0.5.1** — single-pass `FrameRenderer` (fast playback / export).
 - **0.6.0** — Phases 4 + 5.
 - **0.7.0** — Phase 6.
 Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo test`, publish, GitHub release.
