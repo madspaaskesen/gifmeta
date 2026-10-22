@@ -4,7 +4,7 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
-## [Unreleased] 🧩 Delta-frame detection, correct previews & clear loop settings
+## [0.5.0] 🧩 2026-10-22 - Delta-frame detection, correct previews & clear loop settings
 
 ### 🔄 Loop settings
 - **Fixed:** a GIF without a loop block plays **once**, but was reported as `0` (infinite) — and

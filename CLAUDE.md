@@ -1,7 +1,7 @@
 # gifmeta (crate + CLI)
 
 Small Rust crate and CLI for inspecting and editing GIF metadata: loop count, frame delays,
-frame preview as PNG. Published on crates.io (current: **0.4.1**), MIT, edition 2021.
+frame preview as PNG. Published on crates.io (current: **0.5.0**), MIT, edition 2021.
 Consumed by the sibling `../gifmeta-gui` Tauri app.
 
 ## Commands

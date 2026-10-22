@@ -1,6 +1,6 @@
 [package]
 name = "gifmeta"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
 description = "A sacred tool for inspecting and editing GIF metadata from the command line."
