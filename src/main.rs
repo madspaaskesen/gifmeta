@@ -1,7 +1,6 @@
 use base64::engine::Engine;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf; // Import the Engine trait for encode()
-pub mod utils;
 
 #[derive(Parser)]
 #[command(name = "gifmeta", version, about = "Inspect and edit GIF metadata")]
@@ -33,9 +32,13 @@ enum Commands {
         #[arg(value_name = "INPUT")]
         input: PathBuf,
 
-        /// Loop count, 0 infinite, else how many times to play.
-        #[arg(long)]
+        /// How many times the GIF plays (1 = once, 2 = twice, …). Use --infinite to loop forever.
+        #[arg(long, value_name = "TIMES", conflicts_with = "infinite")]
         loop_count: Option<u16>,
+
+        /// Loop forever
+        #[arg(long)]
+        infinite: bool,
 
         /// Delay for all frame
         #[arg(long)]
@@ -96,7 +99,10 @@ fn main() {
                     println!("🖼️ Dimensions   : {} × {}", meta.width, meta.height);
                     println!("🖼️ Frame count  : {}", meta.frame_count);
                     println!("⏱️ Duration     : {} centiseconds", meta.total_duration_cs);
-                    println!("🔄Loop         : {:?}", meta.loop_count);
+                    println!(
+                        "🔄Loop         : {}",
+                        gifmeta::LoopMode::from_count(meta.loop_count)
+                    );
                     println!("🎨Has palette  : {:?}", meta.has_global_palette);
                     println!("🎨Palette size : {}", meta.global_palette_size.unwrap_or(0));
                     println!("🎨Transparency : {:?}", meta.uses_transparency);
@@ -132,16 +138,44 @@ fn main() {
         Commands::Mod {
             input,
             loop_count,
+            infinite,
             delay,
             delays,
             output,
         } => {
-            let delays_map = delays
-                .as_ref()
-                .map(|s| utils::parse_csv::parse_keyval_csv(s))
-                .transpose()
-                .unwrap_or(None);
-            let _ = gifmeta::mod_gif(&input, output, loop_count, delay, delays_map);
+            let delays_map = match delays
+                .as_deref()
+                .map(gifmeta::utils::parse_csv::parse_keyval_csv)
+            {
+                Some(Err(e)) => {
+                    eprintln!("❌ --delays: {}", e);
+                    std::process::exit(2);
+                }
+                Some(Ok(m)) => Some(m),
+                None => None,
+            };
+            let loop_mode = match (infinite, loop_count) {
+                (true, _) => Some(gifmeta::LoopMode::Infinite),
+                (false, Some(0)) => {
+                    eprintln!("⚠️  --loop-count 0 is deprecated, use --infinite");
+                    Some(gifmeta::LoopMode::Infinite)
+                }
+                (false, Some(n)) => Some(gifmeta::LoopMode::Times(n)),
+                (false, None) => None,
+            };
+            let opts = gifmeta::ModOptions {
+                output,
+                loop_mode,
+                delay_all: delay,
+                delays: delays_map,
+            };
+            match gifmeta::modify_gif(&input, opts) {
+                Ok(out) => println!("✅ Modifications applied → {}", out.display()),
+                Err(e) => {
+                    eprintln!("❌ {}", e);
+                    std::process::exit(1);
+                }
+            }
         }
         Commands::Preview {
             input,

@@ -48,7 +48,8 @@ rm "$TESTDIR/layout/frame1.png" "$TESTDIR/layout/frame2.png"
 # Loop: loop once
 convert -loop 1 -delay 100 xc:plum -delay 100 xc:pink "$TESTDIR/loop/loop-once.gif"
 
-# Loop: no loop flag (default depends on viewer)
+# Loop: ImageMagick default — NOTE: IM writes a NETSCAPE block with 0 (= infinite) by default,
+# so despite the name this GIF loops forever. loop-once.gif is the one WITHOUT a loop block.
 convert -delay 100 xc:gold -delay 100 xc:orange "$TESTDIR/loop/no-loop-flag.gif"
 
 # Color: Full 256-color palette gradient

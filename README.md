@@ -29,7 +29,7 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 
 ## 🔧 Features
 
-- 🔁 Set infinite or fixed loop count (`--loop-count`)
+- 🔁 Loop forever (`--infinite`) or a fixed number of plays (`--loop-count 3`)
 - ⏱️ Apply fixed delay to all frames (`--delay`)
 - 🎯 Set specific frame delays (`--delays 1=30,4=60`)
 - 📤 Output JSON metadata (`--json`)
@@ -140,18 +140,20 @@ Let me know if you want the same clarity for Windows (e.g., SmartScreen warnings
 
 You can combine any of the following:
 
-- `--loop-count <n>`: Set loop behavior (0 = infinite, 1 = once, 2 = twice…)
+- `--infinite`: Loop forever
+- `--loop-count <n>`: Play exactly n times (1 = once, 2 = twice…). Can't be combined with `--infinite`.
+  (`--loop-count 0` still means infinite but is deprecated.)
 - `--delay <n>`: Set same delay for all frames. Unit is **centiseconds** (1 = 10ms).
 - `--delays <csv>`: Override specific frames. Format: `1=15,3=50` (in centiseconds).
 
 ### Show metadata
 ```bash
-gifmeta info --input tests/testdata/loop/10frame-rainbow.gif
+gifmeta info tests/testdata/loop/10frame-rainbow.gif
 ```
 
 ### Show metadata output as json
 ```bash
-gifmeta info --input tests/testdata/loop/10frame-rainbow.gif --json
+gifmeta info tests/testdata/loop/10frame-rainbow.gif --json
 ```
 
 ### Detect delta-optimized frames
@@ -161,29 +163,34 @@ gifmeta info tests/testdata/optimize/moving-square-optimized.gif --show-frames
 Shows `🧩 Optimized : yes (1 keyframes / 5 frames)` and marks every frame 🔑 (keyframe, a full
 image on its own) or Δ (delta frame that only stores changes on top of earlier frames).
 
-### Modify loop count
+### Loop forever
 ```bash
-gifmeta mod --input tests/testdata/loop/loop-once.gif --loop-count 10 --output tests/testdata/loop/loop-once-modified.gif
+gifmeta mod tests/testdata/loop/loop-once.gif --infinite --output loop-forever.gif
+```
+
+### Modify loop count (plays exactly 10 times)
+```bash
+gifmeta mod tests/testdata/loop/loop-once.gif --loop-count 10 --output tests/testdata/loop/loop-once-modified.gif
 ```
 
 ### Modify delay on all frames to 100ms or 10 centiseconds
 ```bash
-gifmeta mod --input tests/testdata/timing/zero-delay.gif --delay 10 --output tests/testdata/timing/zero-delay-modified.gif
+gifmeta mod tests/testdata/timing/zero-delay.gif --delay 10 --output tests/testdata/timing/zero-delay-modified.gif
 ```
 
 ### Modify frame delays using centiseconds (1 = 10ms): frame 0 → 1, frame 1 → 20
 ```bash
-gifmeta mod --input tests/testdata/timing/zero-delay.gif --delays "0=1,1=20" --output tests/testdata/timing/zero-delay-modified2.gif
+gifmeta mod tests/testdata/timing/zero-delay.gif --delays "0=1,1=20" --output tests/testdata/timing/zero-delay-modified2.gif
 ```
 
 ### Modify delay on all frames to 150ms, set specific frame 0 to 20ms and frame 1 to 200ms.
 ```bash
-gifmeta mod --input tests/testdata/timing/zero-delay.gif --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified3.gif
+gifmeta mod tests/testdata/timing/zero-delay.gif --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified3.gif
 ```
 
 ### Modify all values at once example
 ```bash
-gifmeta mod --input tests/testdata/timing/zero-delay.gif --loop-count 0 --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified4.gif
+gifmeta mod tests/testdata/timing/zero-delay.gif --infinite --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified4.gif
 ```
 
 ### 🖼️ Preview a GIF Frame as PNG
@@ -193,13 +200,13 @@ You can now extract a specific frame from any GIF and output it as a PNG image �
 #### 🔹 Output frame 0 as PNG to a file
 
 ```bash
-gifmeta preview --input path/to/input.gif --frame 0 --output frame0.png
+gifmeta preview path/to/input.gif --frame 0 --output frame0.png
 ```
 
 #### 🔹 Output frame 3 as base64 (for GUI, web, etc.)
 
 ```bash
-gifmeta preview --input path/to/input.gif --frame 3 --as-base64
+gifmeta preview path/to/input.gif --frame 3 --as-base64
 ```
 
 #### 🔹 Raw view of a delta frame
@@ -248,6 +255,7 @@ This is useful for testing transparency, timing, or human-visible playback chang
 ## 🛤️ Roadmap
 
 - [x] Set loop count (v0.2.0)
+- [x] `--infinite` + correct "plays once" handling (v0.5.0)
 - [x] CLI structure with `clap v4`
 - [x] Set per-frame delays (v0.3.0)
 - [ ] Frame editing with duration visuals (experimental)

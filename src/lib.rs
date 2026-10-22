@@ -28,6 +28,42 @@ pub fn get_metadata(
     }
 }
 
+pub use commands::modify::ModOptions;
+pub use gifmeta_structs::LoopMode;
+
+/// Modifies a GIF: loop setting, delay for all frames and/or per-frame delays.
+///
+/// Returns the path that was written (`opts.output`, or a temp file when `None`).
+///
+/// # Example
+/// ```
+/// use gifmeta::{modify_gif, LoopMode, ModOptions};
+/// let out = std::env::temp_dir().join("gifmeta-doc-modify.gif");
+/// modify_gif(
+///     &"tests/testdata/loop/loop-once.gif".into(),
+///     ModOptions {
+///         output: Some(out.clone()),
+///         loop_mode: Some(LoopMode::Times(3)),
+///         delay_all: Some(10),
+///         ..Default::default()
+///     },
+/// ).unwrap();
+/// assert_eq!(gifmeta::get_metadata(&out, false).unwrap().loop_count, 3);
+/// ```
+pub fn modify_gif(input: &PathBuf, opts: ModOptions) -> Result<PathBuf, String> {
+    if opts.is_empty() {
+        return Err("No modification parameters provided. Use at least one of: \
+             --loop-count, --infinite, --delay or --delays"
+            .into());
+    }
+    commands::modify::apply(input, &opts)
+}
+
+/// Old API. `loop_count`: `0` = infinite, `n` = plays n times.
+#[deprecated(
+    since = "0.5.0",
+    note = "use `modify_gif(input, ModOptions { .. })` with `LoopMode`"
+)]
 pub fn mod_gif(
     input: &PathBuf,
     output: Option<PathBuf>,
@@ -35,30 +71,47 @@ pub fn mod_gif(
     delay_all: Option<u16>,
     delays: Option<HashMap<usize, u16>>,
 ) -> Result<(), String> {
-    if loop_count.is_none() && delay_all.is_none() && delays.as_ref().map_or(true, |m| m.is_empty())
-    {
-        eprintln!("⚠️  No modifications specified.");
-        eprintln!("   Use at least one of: --loop, --delay, or --delays");
-        return Err("No modification parameters provided.".into());
-    }
-
-    match commands::modify::apply_modifications(input, loop_count, delay_all, delays, output) {
-        Ok(_) => {
-            println!("File modified.");
+    let opts = ModOptions {
+        output,
+        loop_mode: loop_count.map(LoopMode::from_count),
+        delay_all,
+        delays,
+    };
+    match modify_gif(input, opts) {
+        Ok(out) => {
+            println!("✅ Modifications applied → {}", out.display());
             Ok(())
         }
         Err(e) => {
-            eprintln!("Failed to extract loop count: {}", e);
+            eprintln!("❌ {}", e);
             Err(e)
         }
     }
 }
 
-/// Prints the loop count of the provided GIF file.
+/// Returns the loop setting of a GIF as a [`LoopMode`].
+/// A GIF without a loop block plays once (`LoopMode::Times(1)`).
 ///
-/// # Arguments
-///
-/// * `path` - Path to the `.gif` file.
+/// # Example
+/// ```
+/// use gifmeta::{get_loop_mode, LoopMode};
+/// let mode = get_loop_mode(&"tests/testdata/loop/loop-once.gif".into()).unwrap();
+/// assert_eq!(mode, LoopMode::Times(1));
+/// ```
+pub fn get_loop_mode(path: &PathBuf) -> Result<LoopMode, String> {
+    utils::loop_count::read_loop_mode(path)
+}
+
+/// Sets the loop setting of a GIF. If `output` is `None`, the input file is overwritten.
+pub fn set_loop_mode(
+    path: &PathBuf,
+    mode: LoopMode,
+    output: Option<PathBuf>,
+) -> Result<(), String> {
+    utils::loop_count::set_loop_mode(path, mode, output)
+}
+
+/// Prints and returns how many times the GIF plays (`0` = infinite, `1` = once).
 ///
 /// # Example
 /// ```
@@ -66,16 +119,9 @@ pub fn mod_gif(
 /// get_loop_count(&std::path::PathBuf::from("tests/testdata/loop/2.gif"));
 /// ```
 pub fn get_loop_count(path: &PathBuf) -> Result<u16, String> {
-    match utils::loop_count::extract_loop_count(path) {
-        Ok(count) => {
-            println!("Loop count: {}", count);
-            Ok(count)
-        }
-        Err(e) => {
-            eprintln!("Failed to extract loop count: {}", e);
-            Err(e)
-        }
-    }
+    let mode = utils::loop_count::read_loop_mode(path)?;
+    println!("Loop count: {}", mode);
+    Ok(mode.to_count())
 }
 
 /// Sets a fixed frame delay (in centiseconds) for all frames in the GIF.
@@ -111,33 +157,22 @@ pub fn set_frame_delay(path: &PathBuf, delay: u16, output: Option<PathBuf>) -> R
     }
 }
 
-/// Sets the loop count metadata in a GIF file.
+/// Sets how many times the GIF plays: `0` = infinite, `1` = once, `n` = n times.
+/// If `output` is `None`, the input file is overwritten.
 ///
-/// Currently a placeholder (not yet implemented).
-///
-/// # Arguments
-///
-/// * `path` - Path to the input `.gif` file.
-/// * `count` - Number of loops (e.g., `0` = infinite).
-/// * `output` - Optional path for the output file. If `None`, overwrites original.
+/// Before 0.5.0 this wrote the raw file value (so `3` played 4 times) — it now matches
+/// `mod --loop-count` and `info`.
 ///
 /// # Example
 /// ```
 /// use gifmeta::set_loop_count;
-/// set_loop_count(&"tests/testdata/loop/2.gif".into(), 3, None);
+/// let out = std::env::temp_dir().join("gifmeta-doc-loop.gif");
+/// set_loop_count(&"tests/testdata/loop/2.gif".into(), 3, Some(out.clone())).unwrap();
+/// assert_eq!(gifmeta::get_metadata(&out, false).unwrap().loop_count, 3);
 /// ```
 pub fn set_loop_count(path: &PathBuf, count: u16, output: Option<PathBuf>) -> Result<u16, String> {
-    let output_clone = output.clone();
-    match utils::loop_count::set_loop_count(path, count, output) {
-        Ok(_) => {
-            println!("New loop count: {} saved to: {:?}", count, output_clone);
-            Ok(count)
-        }
-        Err(e) => {
-            eprintln!("Failed to extract loop count: {}", e);
-            Err(e)
-        }
-    }
+    utils::loop_count::set_loop_count(path, count, output)?;
+    Ok(count)
 }
 
 /// Displays the delay (in centiseconds) of each frame in the GIF.

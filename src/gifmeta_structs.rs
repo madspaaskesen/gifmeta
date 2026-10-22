@@ -4,14 +4,61 @@ use serde::Serialize;
 #[derive(Debug)]
 pub struct GifError(pub String);
 
+/// How often a GIF plays.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LoopMode {
+    /// Loop forever.
+    Infinite,
+    /// Play exactly this many times (`Times(1)` = once, no loop block in the file).
+    Times(u16),
+}
+
+impl LoopMode {
+    /// Converts the user-facing number used by `loop_count` (`0` = infinite, `n` = n times).
+    pub fn from_count(count: u16) -> Self {
+        match count {
+            0 => LoopMode::Infinite,
+            n => LoopMode::Times(n),
+        }
+    }
+
+    /// User-facing number: `0` for infinite, otherwise how many times it plays.
+    pub fn to_count(self) -> u16 {
+        match self {
+            LoopMode::Infinite => 0,
+            LoopMode::Times(n) => n,
+        }
+    }
+
+    pub fn is_infinite(self) -> bool {
+        self == LoopMode::Infinite
+    }
+}
+
+impl std::fmt::Display for LoopMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoopMode::Infinite => write!(f, "∞ infinite"),
+            LoopMode::Times(1) => write!(f, "1× (plays once)"),
+            LoopMode::Times(n) => write!(f, "{}×", n),
+        }
+    }
+}
+
 /// Metadata summary for a GIF file.
+///
+/// `#[non_exhaustive]`: new fields may be added in minor releases.
 #[derive(Debug, PartialEq, Serialize)]
+#[non_exhaustive]
 pub struct GifMetadata {
     pub width: u16,
     pub height: u16,
     pub frame_count: u32,
     pub total_duration_cs: u32, // centiseconds
+    /// How many times the GIF plays: `0` = infinite, `1` = once, `n` = n times.
     pub loop_count: u16,
+    /// `true` when the GIF loops forever (same as `loop_count == 0`, but explicit).
+    pub loop_infinite: bool,
     pub frames: Vec<FrameMeta>,
     pub has_global_palette: bool,
     pub global_palette_size: Option<usize>,
@@ -48,7 +95,10 @@ impl From<gif::DisposalMethod> for Disposal {
 }
 
 /// Metadata for an individual frame.
+///
+/// `#[non_exhaustive]`: new fields may be added in minor releases.
 #[derive(Debug, PartialEq, Serialize)]
+#[non_exhaustive]
 pub struct FrameMeta {
     pub index: usize,
     pub delay_cs: u16,

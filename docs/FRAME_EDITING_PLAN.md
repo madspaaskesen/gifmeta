@@ -145,20 +145,19 @@ Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo t
 
 ## 🐞 Existing issues found during analysis
 
-- **Loop flag lost/changed:** a GIF without a NETSCAPE2.0 block (plays once) becomes **infinite**
-  after `mod` without `--loop-count`. Reproduced with `tests/testdata/loop/no-loop-flag.gif`.
-  Cause: `extract_loop_count` errors → treated as `0` → `Repeat::Infinite`. Fix: return `Option`,
-  and when absent don't write a NETSCAPE block at all.
-- **Loop-count semantics are inconsistent:** `info`/`mod` use user-facing counts (N+1), while
-  `set_loop_count` writes the raw value.
-- `extract_loop_count` reads `buffer[i+1]` / `buffer[i+3..i+14]` without bounds checks → can panic on truncated files.
+- ~~**Loop flag lost/changed:** a GIF without a NETSCAPE2.0 block (plays once) was reported as `0`
+  (infinite) and `mod` without `--loop-count` turned it into an infinite loop~~ — fixed with
+  `LoopMode` + `--infinite`. Reproduces with `tests/testdata/loop/loop-once.gif` (the one without a
+  block). Note: `no-loop-flag.gif` despite its name has a block with 0 — ImageMagick writes one by default.
+- ~~Loop-count semantics inconsistent (`set_loop_count` wrote the raw value)~~ — fixed, all APIs use "plays n times".
+- ~~`extract_loop_count` can panic on truncated files~~ — fixed.
 - ~~`extract_frame_as_png` ignores disposal and lets transparent pixels overwrite the canvas → wrong
   previews for optimized GIFs~~ — fixed in Phase 3.
 - `mod` without `--output` writes to `$TMPDIR/<uuid>.mod.gif` (not documented); `set_frame_delay`
   without output overwrites the input — inconsistent.
 - README examples use `--input`, but INPUT is positional.
 - ~~`info` panics when the GIF has no global palette (`global_palette_size.unwrap()`)~~ — fixed in Phase 1.
-- `cargo test` doctests modify fixtures (`tests/testdata/loop/2.gif`) and write `modified-*.gif` into testdata.
+- ~~`cargo test` modifies fixtures (`2.gif`) and writes `modified-*.gif` into testdata~~ — tests now write to `$TMPDIR/gifmeta-tests/` (only `tests/output/` remains, gitignored).
 - `show_frame_delays` / `set_selected_frame_delays` in `lib.rs` are stubs.
 - GUI: path handling with `split("/")` breaks on Windows; `SettingsTab.applyToAllChange` references
   undefined `delay_cs` (dead code); some JSX uses `class=`; save feedback via `alert()`.
@@ -168,4 +167,4 @@ Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo t
 1. Delete delay policy default: `merge` or `drop`?
 2. >256 colours on re-key: quantize with warning, or error in the first version?
 3. Release 0.5.0 with detection only, or wait for the renderer (Phase 3)?
-4. Fix the loop-flag bug in 0.5.0? (Recommended — small and user-visible.)
+4. ~~Fix the loop-flag bug in 0.5.0?~~ — done (`--infinite`, `LoopMode`).

@@ -4,7 +4,30 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
-## [Unreleased] 🧩 Delta-frame detection
+## [Unreleased] 🧩 Delta-frame detection, correct previews & clear loop settings
+
+### 🔄 Loop settings
+- **Fixed:** a GIF without a loop block plays **once**, but was reported as `0` (infinite) — and
+  `mod` without `--loop-count` (e.g. only `--delay`) silently turned it into an **infinite** loop
+- New `--infinite` flag; `--loop-count N` now means "plays N times" (1 = once). Can't be combined
+- `info` shows `🔄 Loop : ∞ infinite`, `1× (plays once)` or `3×`; JSON gets `loop_infinite`
+- New lib API: `LoopMode::{Infinite, Times(n)}`, `modify_gif(input, ModOptions { .. })`,
+  `get_loop_mode`, `set_loop_mode`
+- `--delays` with an invalid value now errors instead of being silently ignored
+- `extract_loop_count` no longer panics on truncated files
+
+### ⚠️ Migration / behavior changes
+- `info`/JSON `loop_count` is now `1` (not `0`) for GIFs without a loop block
+- `--loop-count 0` still works but is deprecated → use `--infinite`
+- `mod_gif(…)` is deprecated → `modify_gif(input, ModOptions { loop_mode, delay_all, delays, output, ..Default::default() })`
+- `set_loop_count(path, n, …)` now uses the same meaning as `mod` (`n` = plays n times, `0` = infinite);
+  before it wrote the raw file value (`3` played 4 times)
+- `utils::loop_count::extract_loop_count` is deprecated → `read_loop_mode` / `extract_raw_loop_value`
+- `commands::modify::apply_modifications` was removed → `modify_gif`
+- `GifMetadata` / `FrameMeta` are `#[non_exhaustive]` (fields can be added without breaking)
+- Deprecated items will be removed in a later release
+
+### 🧩 Frames
 
 - `info` now detects **frame-optimized GIFs** (frames that only store changes since earlier frames)
 - New summary line: `🧩 Optimized : yes (1 keyframes / 5 frames)`

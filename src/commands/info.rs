@@ -85,11 +85,8 @@ pub fn get_metadata(
         total_duration += frame.delay as u32;
     }
 
-    let loop_count = loop_count::extract_loop_count(path).unwrap_or(0);
-    let display_loop_count = match loop_count {
-        0 => 0,     // Infinite looping (by GIF standard)
-        n => n + 1, // Normalize to user-facing loop count
-    };
+    // A missing NETSCAPE2.0 block means the GIF plays once (not infinite).
+    let loop_mode = loop_count::read_loop_mode(path)?;
 
     let frame_count: u32 = frame_count.try_into().unwrap();
 
@@ -100,7 +97,8 @@ pub fn get_metadata(
         keyframe_count,
         is_delta_optimized: keyframe_count < frame_count,
         total_duration_cs: total_duration,
-        loop_count: display_loop_count,
+        loop_count: loop_mode.to_count(),
+        loop_infinite: loop_mode.is_infinite(),
         frames: frames,
         has_global_palette: has_global_palette,
         global_palette_size: global_palette_size,
