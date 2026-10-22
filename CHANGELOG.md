@@ -4,6 +4,10 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
+## [0.6.1] 🔎 2026-10-22 - Better crates.io description
+
+- 🔎 New crate description, keywords (`animation`, `frames`) and categories (`multimedia::encoding`) so gifmeta is easier to find. No code changes.
+
 ## [0.6.0] ✂️ 2026-10-22 - Delete frames, keyframes & unoptimize
 
 - ✂️ **Delete frames**: `gifmeta mod in.gif --delete 2,5 -o out.gif`

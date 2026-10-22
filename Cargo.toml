@@ -1,16 +1,16 @@
 [package]
 name = "gifmeta"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
-description = "A sacred tool for inspecting and editing GIF metadata from the command line."
+description = "Inspect and edit animated GIFs: fix loops and delays, render frames, and delete frames safely, even in frame-optimized GIFs."
 license = "MIT"
 repository = "https://github.com/madspaaskesen/gifmeta"
 homepage = "https://mp-it.dk/projects/gifmeta"
 documentation = "https://docs.rs/gifmeta"
 readme = "README.md"
-categories = ["command-line-utilities", "multimedia::images"]
-keywords = ["gif", "metadata", "cli", "loop", "delay"]
+categories = ["multimedia::images", "command-line-utilities", "multimedia::encoding"]
+keywords = ["gif", "animation", "frames", "loop", "cli"]
 exclude = [".DS_Store"]
 
 [dependencies]
