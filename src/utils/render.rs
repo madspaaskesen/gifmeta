@@ -25,7 +25,7 @@ const CLEAR: Rgba<u8> = Rgba([0, 0, 0, 0]);
 
 /// Draws `frame` (RGBA buffer) onto `canvas` at its offset, skipping transparent pixels.
 /// Works row by row on the raw buffers (no per-pixel bounds checks).
-fn draw(canvas: &mut RgbaImage, frame: &gif::Frame) {
+pub(crate) fn draw(canvas: &mut RgbaImage, frame: &gif::Frame) {
     let (cw, ch) = canvas.dimensions();
     let (left, top) = (frame.left as u32, frame.top as u32);
     if left >= cw || top >= ch {
@@ -54,7 +54,7 @@ fn draw(canvas: &mut RgbaImage, frame: &gif::Frame) {
 }
 
 /// Clears the frame's rectangle on the canvas (disposal `Background`).
-fn clear_rect(canvas: &mut RgbaImage, frame: &gif::Frame) {
+pub(crate) fn clear_rect(canvas: &mut RgbaImage, frame: &gif::Frame) {
     let (cw, ch) = canvas.dimensions();
     let (left, top) = (frame.left as u32, frame.top as u32);
     if left >= cw || top >= ch {
@@ -67,6 +67,41 @@ fn clear_rect(canvas: &mut RgbaImage, frame: &gif::Frame) {
     for y in 0..rows {
         let start = (top as usize + y) * canvas_stride + left as usize * 4;
         buf[start..start + cols * 4].fill(0);
+    }
+}
+
+/// Minimal canvas that replays frames exactly like a viewer (used for shadow simulation when
+/// deleting / re-keying frames). Frames must be RGBA-decoded.
+pub(crate) struct Compositor {
+    pub canvas: RgbaImage,
+}
+
+impl Compositor {
+    pub fn new(width: u32, height: u32) -> Self {
+        Self {
+            canvas: RgbaImage::from_pixel(width, height, CLEAR),
+        }
+    }
+
+    /// Draws `frame`; returns a snapshot of the canvas *before* drawing when the frame uses
+    /// disposal `Previous` (pass it to [`Compositor::dispose`]).
+    pub fn draw(&mut self, frame: &gif::Frame) -> Option<RgbaImage> {
+        let snapshot = (frame.dispose == DisposalMethod::Previous).then(|| self.canvas.clone());
+        draw(&mut self.canvas, frame);
+        snapshot
+    }
+
+    /// Applies the frame's disposal method (prepares the canvas for the next frame).
+    pub fn dispose(&mut self, frame: &gif::Frame, snapshot: Option<RgbaImage>) {
+        match frame.dispose {
+            DisposalMethod::Background => clear_rect(&mut self.canvas, frame),
+            DisposalMethod::Previous => {
+                if let Some(s) = snapshot {
+                    self.canvas = s;
+                }
+            }
+            DisposalMethod::Any | DisposalMethod::Keep => {}
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+pub mod encode_frame;
 pub mod extract_frame_as_png;
 pub mod frame_analysis;
 pub mod loop_count;

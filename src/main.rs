@@ -9,6 +9,23 @@ struct Cli {
     command: Commands,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum DeleteModeArg {
+    /// Add the deleted frame's delay to the previous frame
+    Merge,
+    /// Drop the delay (animation gets shorter)
+    Drop,
+}
+
+fn parse_frames(flag: &str, value: &Option<String>) -> Option<Vec<usize>> {
+    value.as_deref().map(|s| {
+        gifmeta::utils::parse_csv::parse_csv::<usize>(s).unwrap_or_else(|e| {
+            eprintln!("❌ {flag}: {e}");
+            std::process::exit(2);
+        })
+    })
+}
+
 #[derive(Subcommand)]
 enum Commands {
     /// Show metadata
@@ -39,6 +56,24 @@ enum Commands {
         /// Loop forever
         #[arg(long)]
         infinite: bool,
+
+        /// Delete frames (0-based, comma separated), e.g. 2,5. Frames that depended on a deleted
+        /// frame are re-written as full images automatically.
+        #[arg(long, value_name = "FRAMES")]
+        delete: Option<String>,
+
+        /// What to do with a deleted frame's delay: merge it into the previous frame (keeps the
+        /// total duration) or drop it (shorter animation)
+        #[arg(long, value_enum, default_value_t = DeleteModeArg::Merge)]
+        delete_mode: DeleteModeArg,
+
+        /// Convert frames to full images / keyframes (0-based, comma separated), e.g. 3,7
+        #[arg(long, value_name = "FRAMES")]
+        keyframe: Option<String>,
+
+        /// Convert EVERY frame to a full image (un-optimize the GIF; bigger file, every frame editable)
+        #[arg(long)]
+        unoptimize: bool,
 
         /// Delay for all frame
         #[arg(long)]
@@ -147,6 +182,10 @@ fn main() {
             input,
             loop_count,
             infinite,
+            delete,
+            delete_mode,
+            keyframe,
+            unoptimize,
             delay,
             delays,
             output,
@@ -176,9 +215,30 @@ fn main() {
                 loop_mode,
                 delay_all: delay,
                 delays: delays_map,
+                delete_frames: parse_frames("--delete", &delete),
+                delete_mode: match delete_mode {
+                    DeleteModeArg::Merge => gifmeta::DeleteMode::MergeDelay,
+                    DeleteModeArg::Drop => gifmeta::DeleteMode::DropDelay,
+                },
+                keyframes: parse_frames("--keyframe", &keyframe),
+                unoptimize,
             };
-            match gifmeta::modify_gif(&input, opts) {
-                Ok(out) => println!("✅ Modifications applied → {}", out.display()),
+            match gifmeta::modify_gif_with_report(&input, opts) {
+                Ok(r) => {
+                    if r.frames_in != r.frames_out {
+                        println!(
+                            "🗑️  Frames: {} → {} (deleted {:?})",
+                            r.frames_in, r.frames_out, r.deleted
+                        );
+                    }
+                    if !r.rekeyed.is_empty() {
+                        println!("🔑 Written as full images: {:?}", r.rekeyed);
+                    }
+                    for w in r.warnings() {
+                        eprintln!("⚠️  {}", w);
+                    }
+                    println!("✅ Modifications applied → {}", r.output.display());
+                }
                 Err(e) => {
                     eprintln!("❌ {}", e);
                     std::process::exit(1);

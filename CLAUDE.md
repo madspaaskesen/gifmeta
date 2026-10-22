@@ -1,7 +1,7 @@
 # gifmeta (crate + CLI)
 
 Small Rust crate and CLI for inspecting and editing GIF metadata: loop count, frame delays,
-frame preview as PNG. Published on crates.io (current: **0.5.1**), MIT, edition 2021.
+frame preview as PNG. Published on crates.io (current: **0.6.0**), MIT, edition 2021.
 Consumed by the sibling `../gifmeta-gui` Tauri app.
 
 ## Commands
@@ -41,7 +41,8 @@ docs/FRAME_EDITING_PLAN.md  roadmap for frame editing (detect → GUI → render
 ## Public API (src/lib.rs)
 - `get_metadata(&PathBuf, show_frames) -> Result<GifMetadata, String>` — `frames` is only filled when `show_frames` is true;
   `keyframe_count`, `is_delta_optimized`, `loop_count`, `loop_infinite` always. Structs are `#[non_exhaustive]`.
-- `modify_gif(input, ModOptions { output, loop_mode, delay_all, delays, ..Default::default() }) -> Result<PathBuf, String>`
+- `modify_gif(input, ModOptions { output, loop_mode, delay_all, delays, delete_frames, delete_mode, keyframes, unoptimize, ..Default::default() }) -> Result<PathBuf, String>`;
+  `modify_gif_with_report` → `ModReport { frames_in, frames_out, deleted, rekeyed, quantized, transparency_warnings }`
   — new options go into `ModOptions` (never new positional params). Errors if nothing to change.
 - `LoopMode::{Infinite, Times(n)}` — `Times(1)` = plays once = **no** NETSCAPE block. `get_loop_mode`, `set_loop_mode`.
 - `get_frame_image(path: String, frame) -> Result<Vec<u8>, String>` — PNG bytes, full-canvas composite ("pretty").
@@ -73,9 +74,11 @@ stdout/stderr — keep that in mind, the GUI calls them too.
 **Read `docs/FRAME_EDITING_PLAN.md` before working on keyframes, deleting, re-keying or unoptimizing frames.**
 It holds the phases, status, pitfalls (palettes >256 colours, disposal `Previous`, index semantics),
 known bugs and open decisions. Update its status markers when a phase lands.
-- Phase 1 (detection) is done but unreleased: `FrameMeta` has rect/disposal/`is_keyframe`,
-  `GifMetadata` has `keyframe_count`/`is_delta_optimized`.
-- Delete/re-key must use the disposal-aware renderer (Phase 3) + shadow simulation — never just skip frames.
+- Phases 1, 3, 4, 5, 6 are done (0.5.0–0.6.0): detection, renderer, `--keyframe`, `--delete`, `--unoptimize`.
+- Delete/re-key = shadow simulation in `commands/modify.rs::apply_with_report` (two `Compositor`s,
+  copy when canvases match, otherwise `utils/encode_frame::encode_full_frame`). Never just skip frames.
+- All frame indices in `ModOptions` are ORIGINAL indices. `ModOptions` grows — always build it with
+  `..Default::default()` (the GUI too).
 
 ## Release checklist
 1. Bump `version` in Cargo.toml (Cargo.lock updates on build).

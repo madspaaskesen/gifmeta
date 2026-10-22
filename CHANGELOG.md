@@ -4,6 +4,27 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
+## [0.6.0] ✂️ 2026-10-22 - Delete frames, keyframes & unoptimize
+
+- ✂️ **Delete frames**: `gifmeta mod in.gif --delete 2,5 -o out.gif`
+  - Frames that depended on a deleted frame (delta-optimized GIFs) are **automatically re-written as
+    full images**, so every remaining frame looks exactly like before. Works with all disposal methods
+    via *shadow simulation* (original and output are replayed side by side; a frame is copied losslessly
+    when its canvas matches, otherwise re-keyed)
+  - The deleted frame's delay is **merged into the previous frame** (total duration unchanged);
+    `--delete-mode drop` makes the animation shorter instead
+  - Verified on a 40-frame optimized GIF: 5 frames deleted → 35/35 frames pixel-identical, only 2 re-keyed
+- 🔑 **Convert frames to full images**: `--keyframe 3,7`
+- 🧱 **Unoptimize**: `--unoptimize` writes every frame as a full image (bigger file, every frame independent)
+- 🎨 Re-keyed frames use an **exact local palette**; with > 256 colours they are colour-reduced (NeuQuant)
+  with a reserved transparent index and a warning
+- New lib API: `ModOptions { delete_frames, delete_mode, keyframes, unoptimize, .. }`, `DeleteMode`,
+  `modify_gif_with_report()` → `ModReport { frames_in, frames_out, deleted, rekeyed, quantized, transparency_warnings }`
+- All frame indices (delays, deletes, keyframes) refer to the **original** frame numbers
+- ⚠️ `ModOptions` has new fields — construct it with `..Default::default()` (struct literals without it no longer compile)
+
+---
+
 ## [0.5.1] ⚡ 2026-10-22 - Render all frames in one pass
 
 - New `FrameRenderer`: an iterator that renders every frame in **one pass** (frame *n* builds on

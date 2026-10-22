@@ -47,7 +47,7 @@ We follow browsers.
 
 ## Phases
 
-### Phase 1 — Detection in the crate ✅ (unreleased)
+### Phase 1 — Detection in the crate ✅ (0.5.0)
 Pure analysis, no file changes. `commands/info.rs` feeds each frame into
 `utils::frame_analysis::KeyframeTracker` (indexed decode → transparent-pixel check is free).
 
@@ -86,7 +86,7 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 - Bonus: `PreviewMode::Raw` / `preview --raw` shows only the pixels stored in a frame.
   GUI: add a "Pretty / Raw" toggle in FrameViewer (Phase 2), raw view on a checkerboard background.
 
-### Phase 4 — Convert a frame to a full image ("re-key") ⬜
+### Phase 4 — Convert a frame to a full image ("re-key") ✅ (0.6.0, `--keyframe`)
 - Crate: `mod --keyframe 3,7` / lib `keyframes: Option<Vec<usize>>`.
 - Writes the rendered canvas of that frame as a full-canvas frame; all other frames are copied unchanged.
 - Keep the frame's original disposal. Because the canvas after the re-keyed frame equals the original
@@ -94,7 +94,7 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
   the same result for later frames. (Verify with a test per disposal method.)
 - GUI: checkbox per frame "Convert to full image".
 
-### Phase 5 — Delete frames ⬜
+### Phase 5 — Delete frames ✅ (0.6.0, `--delete`, `--delete-mode merge|drop`)
 - Crate: `mod --delete 2,5` (`parse_csv::<usize>`) / lib `delete_frames: Option<Vec<usize>>`.
 - All indices (delays, keyframes, deletes) refer to **original** frame indices.
 - Algorithm — *shadow simulation*: replay original and new output side by side with the Phase 3
@@ -110,7 +110,7 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 - GUI: checkbox per frame "Delete frame"; deleted frames dimmed/struck through and excluded from
   status-bar duration + frame count; send `deleteFrames` to `save_modified_gif`.
 
-### Phase 6 — Unoptimize everything ("lazy mode") ⬜
+### Phase 6 — Unoptimize everything ("lazy mode") ✅ (0.6.0, `--unoptimize`)
 - Crate/CLI: `mod --unoptimize` (alias `--coalesce`) → every frame written as a full keyframe.
 - Same machinery as Phase 4 applied to all frames. Bigger files, but every frame is independent
   and safe to edit in any tool.
@@ -118,11 +118,24 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 
 ### Release plan (proposal)
 - ✅ **0.5.0** — Phase 1 + Phase 3 (+ loop fixes). ✅ **0.5.1** — single-pass `FrameRenderer` (fast playback / export).
+- ✅ **0.6.0** — Phases 4, 5 and 6 (keyframe, delete, unoptimize).
 - **0.6.0** — Phases 4 + 5.
 - **0.7.0** — Phase 6.
 Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo test`, publish, GitHub release.
 
 ---
+
+### Implementation notes (0.6.0)
+- `commands/modify.rs::apply_with_report`: indexed + RGBA decoder in lockstep; two `Compositor`s
+  (original / output). Kept frame: canvas before equal → lossless copy of the indexed frame; else
+  `utils/encode_frame::encode_full_frame(original canvas after drawing)` with the original disposal.
+- The last kept frame is buffered so deleted delays can be merged into it (`DeleteMode::MergeDelay`);
+  deleted frames at the start carry their delay to the first kept frame.
+- Known limitation: a re-keyed frame can't make pixels transparent that are opaque on the output canvas
+  (GIF can only draw on top) → reported in `ModReport::transparency_warnings`. Possible fix later: re-key
+  the previous frame with `Background` disposal.
+- Results: forge-preview.gif (40 frames) delete 1,10,11,12,39 → 35/35 frames pixel-identical
+  (ImageMagick compare), 2 re-keyed, exact palettes, 0.48 s.
 
 ## ⚠️ Pitfalls
 
@@ -164,7 +177,7 @@ Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo t
 
 ## ❓ Open decisions
 
-1. Delete delay policy default: `merge` or `drop`?
-2. >256 colours on re-key: quantize with warning, or error in the first version?
+1. ~~Delete delay policy default~~ → `merge` (decided), `--delete-mode drop` available.
+2. ~~>256 colours on re-key~~ → quantize (NeuQuant, reserved transparent index) + warning (decided).
 3. Release 0.5.0 with detection only, or wait for the renderer (Phase 3)?
 4. ~~Fix the loop-flag bug in 0.5.0?~~ — done (`--infinite`, `LoopMode`).

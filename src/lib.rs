@@ -28,7 +28,7 @@ pub fn get_metadata(
     }
 }
 
-pub use commands::modify::ModOptions;
+pub use commands::modify::{DeleteMode, ModOptions, ModReport};
 pub use gifmeta_structs::LoopMode;
 
 /// Modifies a GIF: loop setting, delay for all frames and/or per-frame delays.
@@ -51,12 +51,34 @@ pub use gifmeta_structs::LoopMode;
 /// assert_eq!(gifmeta::get_metadata(&out, false).unwrap().loop_count, 3);
 /// ```
 pub fn modify_gif(input: &PathBuf, opts: ModOptions) -> Result<PathBuf, String> {
+    modify_gif_with_report(input, opts).map(|r| r.output)
+}
+
+/// Like [`modify_gif`], but returns a [`ModReport`]: deleted / re-keyed / colour-reduced frames
+/// and any warnings.
+///
+/// # Example — delete a frame
+/// ```
+/// use gifmeta::{modify_gif_with_report, ModOptions};
+/// let out = std::env::temp_dir().join("gifmeta-doc-delete.gif");
+/// let report = modify_gif_with_report(
+///     &"tests/testdata/optimize/moving-square-optimized.gif".into(),
+///     ModOptions {
+///         output: Some(out.clone()),
+///         delete_frames: Some(vec![2]),
+///         ..Default::default()
+///     },
+/// ).unwrap();
+/// assert_eq!((report.frames_in, report.frames_out), (5, 4));
+/// assert!(report.rekeyed.contains(&3)); // frame 3 depended on the deleted frame
+/// ```
+pub fn modify_gif_with_report(input: &PathBuf, opts: ModOptions) -> Result<ModReport, String> {
     if opts.is_empty() {
         return Err("No modification parameters provided. Use at least one of: \
-             --loop-count, --infinite, --delay or --delays"
+             --loop-count, --infinite, --delay, --delays, --delete, --keyframe or --unoptimize"
             .into());
     }
-    commands::modify::apply(input, &opts)
+    commands::modify::apply_with_report(input, &opts)
 }
 
 /// Old API. `loop_count`: `0` = infinite, `n` = plays n times.
@@ -76,6 +98,7 @@ pub fn mod_gif(
         loop_mode: loop_count.map(LoopMode::from_count),
         delay_all,
         delays,
+        ..Default::default()
     };
     match modify_gif(input, opts) {
         Ok(out) => {

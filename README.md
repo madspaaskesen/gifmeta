@@ -36,6 +36,7 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 - 🖼️ Extract any frame as PNG (to file or base64)
 - 🧩 Detect frame-optimized GIFs (🔑 keyframes vs Δ delta frames)
 - ⚡ Render / export all frames in one pass (`--all`, `FrameRenderer`)
+- ✂️ Delete frames safely, 🔑 convert frames to full images, 🧱 unoptimize (`--delete`, `--keyframe`, `--unoptimize`)
 - 🧪 CLI + doc tests for core functions
 - 🖼️ Side-by-side **visual preview reports** via `run-visual-preview.sh`
 
@@ -146,6 +147,11 @@ You can combine any of the following:
   (`--loop-count 0` still means infinite but is deprecated.)
 - `--delay <n>`: Set same delay for all frames. Unit is **centiseconds** (1 = 10ms).
 - `--delays <csv>`: Override specific frames. Format: `1=15,3=50` (in centiseconds).
+- `--delete <csv>`: Delete frames, e.g. `2,5` (`--delete-mode merge|drop`, default `merge`).
+- `--keyframe <csv>`: Convert frames to full images, e.g. `3,7`.
+- `--unoptimize`: Convert every frame to a full image.
+
+All frame numbers are 0-based and refer to the **original** GIF.
 
 ### Show metadata
 ```bash
@@ -187,6 +193,20 @@ gifmeta mod tests/testdata/timing/zero-delay.gif --delays "0=1,1=20" --output te
 ### Modify delay on all frames to 150ms, set specific frame 0 to 20ms and frame 1 to 200ms.
 ```bash
 gifmeta mod tests/testdata/timing/zero-delay.gif --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified3.gif
+```
+
+### ✂️ Delete frames
+```bash
+gifmeta mod input.gif --delete 2,5 --output output.gif
+```
+Frames that depended on a deleted frame (frame-optimized GIFs) are automatically written as full images,
+so the rest of the animation looks exactly the same. The deleted delay is added to the previous frame
+(same total duration) — use `--delete-mode drop` to make the animation shorter instead.
+
+### 🔑 Convert frames to full images / 🧱 unoptimize
+```bash
+gifmeta mod input.gif --keyframe 3,7 --output output.gif   # selected frames become full images
+gifmeta mod input.gif --unoptimize --output output.gif     # every frame becomes a full image
 ```
 
 ### Modify all values at once example
