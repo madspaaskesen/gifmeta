@@ -24,6 +24,13 @@ rm -rf "$OUT" && mkdir -p "$OUT"
 echo "🔏 gifmeta $TAG — signing as: $APPLE_SIGNING_IDENTITY"
 security find-identity -v -p codesigning | grep -q "$APPLE_SIGNING_IDENTITY" ||
   { echo "❌ Certificate not found in the keychain: $APPLE_SIGNING_IDENTITY"; exit 1; }
+# Fail fast (before a long build) when the notarization credentials are missing.
+xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 || {
+  echo "❌ No notarization profile '$NOTARY_PROFILE' in the keychain. Create it once with:"
+  echo "   xcrun notarytool store-credentials $NOTARY_PROFILE --apple-id <apple-id> --team-id 24Z4BBBVR5"
+  echo "   (asks for an app-specific password from account.apple.com)"
+  exit 1
+}
 
 FILES=()
 for PAIR in aarch64-apple-darwin:macos-aarch64 x86_64-apple-darwin:macos-x86_64; do
