@@ -12,6 +12,7 @@ jobs:
     name: Build binaries
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -24,6 +25,12 @@ jobs:
             ext: ""
             name: macos-x86_64
 
+          # Apple Silicon (native, no Rosetta)
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            ext: ""
+            name: macos-aarch64
+
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             ext: ".exe"
@@ -31,14 +38,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+          targets: ${{ matrix.target }}
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
@@ -78,7 +83,7 @@ jobs:
           cp gifmeta-${{ github.ref_name }}-${{ matrix.name }}.zip dist/
 
       - name: Upload release asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/*
         env:

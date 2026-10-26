@@ -92,3 +92,7 @@ known bugs and open decisions. Update its status markers when a phase lands.
 3. Update README usage.
 4. `cargo fmt && cargo test`, commit `🔖 Bump to vX.Y.Z – …`.
 5. `cargo publish`; GitHub release → `.github/workflows/release.yml` builds linux/macos/windows binaries.
+   (macOS x86_64 + aarch64). CI's binaries are **unsigned**.
+6. When the release workflow is done: on the Mac `scripts/release-mac.sh` (build both macOS targets, sign,
+   notarize, same zip names → `gh release upload --clobber`); on Windows `scripts/sign-windows.ps1 -Tag vX.Y.Z`
+   (Certum/SimplySign signtool on gifmeta.exe, re-zip, `--clobber`). Plan: CODE_SIGNING_PLAN in the claude.ai project.

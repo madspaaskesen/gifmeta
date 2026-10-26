@@ -102,37 +102,32 @@ cargo build --release
 ./target/release/gifmeta --help
 ```
 
-Absolutely. Here’s a clean and helpful section you can add to your `README.md` under the **Installation** section:
+### 🧰 Download a binary
 
----
+Download the zip for your platform from the [latest release](https://github.com/madspaaskesen/gifmeta/releases/latest):
 
-### 🧰 Installation
+| Platform | File |
+|---|---|
+| macOS, Apple Silicon (M1–M4) | `gifmeta-<version>-macos-aarch64.zip` |
+| macOS, Intel | `gifmeta-<version>-macos-x86_64.zip` |
+| Windows | `gifmeta-<version>-windows-x86_64.zip` |
+| Linux | `gifmeta-<version>-linux-x86_64.zip` |
 
-Download the binary for your platform from the [latest release](https://github.com/madspaaskesen/gifmeta/releases).
-
-#### ✅ macOS Users
-
-If you see a warning when trying to run `gifmeta`, macOS may have quarantined the file because it's unsigned.
-
-**To allow execution:**
-
-```bash
-xattr -d com.apple.quarantine gifmeta
-chmod +x gifmeta
-```
-
-Then run it with:
+The macOS binaries are signed and notarized by Apple and the Windows `gifmeta.exe` is signed (from v0.7.0),
+so they run without security warnings.
 
 ```bash
 ./gifmeta info yourfile.gif
 ```
 
-> You only need to do this once per download. After this, `gifmeta` will run normally.
+#### Older macOS builds
 
----
+Builds before v0.7.0 were unsigned. If macOS blocks one, remove the quarantine flag once:
 
-Let me know if you want the same clarity for Windows (e.g., SmartScreen warnings) or Linux permissions 💛
-
+```bash
+xattr -d com.apple.quarantine gifmeta
+chmod +x gifmeta
+```
 
 ---
 
