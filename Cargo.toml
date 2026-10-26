@@ -1,6 +1,6 @@
 [package]
 name = "gifmeta"
-version = "0.6.1"
+version = "0.6.2"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
 description = "Inspect and edit animated GIFs: fix loops and delays, render frames, and delete frames safely, even in frame-optimized GIFs."
