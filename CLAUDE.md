@@ -1,7 +1,7 @@
 # gifmeta (crate + CLI)
 
 Small Rust crate and CLI for inspecting and editing GIF metadata: loop count, frame delays,
-frame preview as PNG. Published on crates.io (current: **0.6.0**), MIT, edition 2021.
+frame preview as PNG. Published on crates.io (current: **0.7.0**), MIT, edition 2021.
 Consumed by the sibling `../gifmeta-gui` Tauri app.
 
 ## Commands
@@ -21,11 +21,13 @@ Note: INPUT is a **positional** arg (no `--input`).
 
 ## Layout
 ```
-src/main.rs                 clap v4 CLI: subcommands Info, Mod, Preview
+src/main.rs                 clap v4 CLI: subcommands Info, Mod, Create, Preview
 src/lib.rs                  public API (what the GUI calls) — thin wrappers, doc-tested
 src/gifmeta_structs.rs      GifMetadata, FrameMeta (Serialize → JSON for CLI --json and GUI)
 src/commands/info.rs        get_metadata: decode, count frames, sum delays, palette/transparency
-src/commands/modify.rs      ModOptions + apply(): decode → re-encode with new loop/delays
+src/commands/modify.rs      ModOptions + apply_with_report(): loop/delays, delete/insert/duplicate/order/keyframe (FrameWriter = shadow simulation)
+src/commands/create.rs      create(): images → new GIF (CreateOptions, CreateReport)
+src/utils/load_image.rs     load PNG/JPEG/WebP as RGBA, size check
 src/utils/loop_count.rs     LoopMode read/write: scan/patch/insert/remove the NETSCAPE2.0 block
 src/utils/set_frame_delay.rs  older standalone "delay all" re-encoder
 src/utils/render.rs           disposal-aware renderer: FrameRenderer (single-pass iterator), render_all_frames,
@@ -35,15 +37,18 @@ src/utils/frame_analysis.rs   KeyframeTracker: 🔑 keyframe vs Δ delta detecti
 src/utils/parse_csv.rs      "1=10,5=20" → HashMap<usize,u16>
 tests/*.rs                  integration tests; fixtures in tests/testdata/{loop,color,timing,transparency,layout,optimize}
 docs/FRAME_EDITING_PLAN.md  roadmap for frame editing (detect → GUI → renderer → re-key → delete → unoptimize)
+docs/WASM_PLAN.md           future plan: gifmeta in the browser (byte API → feature flags → gifmeta-wasm → web app)
 ```
 `main.rs` only uses the lib (`gifmeta::…`) — never add `mod` declarations to main.rs (utils would compile twice without the rest of the crate).
 
 ## Public API (src/lib.rs)
 - `get_metadata(&PathBuf, show_frames) -> Result<GifMetadata, String>` — `frames` is only filled when `show_frames` is true;
   `keyframe_count`, `is_delta_optimized`, `loop_count`, `loop_infinite` always. Structs are `#[non_exhaustive]`.
-- `modify_gif(input, ModOptions { output, loop_mode, delay_all, delays, delete_frames, delete_mode, keyframes, unoptimize, ..Default::default() }) -> Result<PathBuf, String>`;
-  `modify_gif_with_report` → `ModReport { frames_in, frames_out, deleted, rekeyed, quantized, transparency_warnings }`
+- `modify_gif(input, ModOptions { output, loop_mode, delay_all, delays, delete_frames, delete_mode, keyframes, unoptimize, inserts, duplicates, order, ..Default::default() }) -> Result<PathBuf, String>`;
+  `modify_gif_with_report` → `ModReport { frames_in, frames_out, deleted, rekeyed, quantized, transparency_warnings, inserted, duplicated, reordered, quantized_inserts, insert_transparency_warnings }`.
+  `FrameInsert::new(before, path).with_delay(cs)`; `order` = permutation, exclusive with delete/insert/duplicate.
   — new options go into `ModOptions` (never new positional params). Errors if nothing to change.
+- `create_gif(&[PathBuf], CreateOptions { output, delay, delays, loop_mode, ..Default::default() }) -> Result<CreateReport, String>` — ≥ 2 same-size images. CLI `create IMAGES... -o out.gif`.
 - `LoopMode::{Infinite, Times(n)}` — `Times(1)` = plays once = **no** NETSCAPE block. `get_loop_mode`, `set_loop_mode`.
 - `get_frame_image(path: String, frame) -> Result<Vec<u8>, String>` — PNG bytes, full-canvas composite ("pretty").
 - `FrameRenderer::open(path, mode)` — iterator of `RenderedFrame { index, delay_cs, image }`, one pass over the GIF.
@@ -75,6 +80,7 @@ stdout/stderr — keep that in mind, the GUI calls them too.
 It holds the phases, status, pitfalls (palettes >256 colours, disposal `Previous`, index semantics),
 known bugs and open decisions. Update its status markers when a phase lands.
 - Phases 1, 3, 4, 5, 6 are done (0.5.0–0.6.0): detection, renderer, `--keyframe`, `--delete`, `--unoptimize`.
+- Phases 7, 8 done (0.7.0): `--insert`, `--duplicate`, `--order`, `create`.
 - Delete/re-key = shadow simulation in `commands/modify.rs::apply_with_report` (two `Compositor`s,
   copy when canvases match, otherwise `utils/encode_frame::encode_full_frame`). Never just skip frames.
 - All frame indices in `ModOptions` are ORIGINAL indices. `ModOptions` grows — always build it with

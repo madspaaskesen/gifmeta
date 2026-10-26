@@ -4,6 +4,20 @@ All notable changes to **gifmeta** will be documented here.
 
 ---
 
+## [0.7.0] 🎬 2026-10-26 - Create GIFs, insert, duplicate & re-order frames
+
+- 🎬 **Create a GIF from images**: `gifmeta create a.png b.png c.jpg -o out.gif` / lib `create_gif(images, CreateOptions { .. })`.
+  At least 2 images, all the same size (PNG, JPEG or WebP). `--delay` (default 10 cs), `--delays 1=50`, `--loop-count` (default: forever).
+- ➕ **Insert frames**: `mod --insert 3=logo.png` (repeatable, `--insert-delay`) / lib `ModOptions::inserts` + `FrameInsert`.
+  Image must match the GIF size. Insert before N + `--delete N` replaces frame N.
+- 📑 **Duplicate frames**: `mod --duplicate 2,5` / lib `ModOptions::duplicates`.
+- 🔀 **Re-order frames**: `mod --order 4,3,2,1,0` / lib `ModOptions::order` (every frame exactly once).
+- All of it works on frame-optimized GIFs: frames whose neighbours changed are re-written as full images (same shadow simulation as delete).
+- 🩹 Fewer transparency warnings: when a full frame needs transparent pixels where the canvas isn't clear, the frame before it
+  is now cleared after it's shown (disposal `Background`) instead of letting old pixels show through.
+- `ModReport` gains `inserted`, `duplicated`, `reordered`, `quantized_inserts`, `insert_transparency_warnings`.
+- 📦 `image` now uses only the `png`, `jpeg` and `webp` features (was: all default formats) — fewer dependencies, faster builds.
+
 ## [0.6.2] 🌐 2026-10-26 - New homepage
 
 - 🌐 Homepage is now [gifmeta.com](https://gifmeta.com). No code changes.

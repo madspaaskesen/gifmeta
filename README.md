@@ -39,6 +39,8 @@ Most tools were too heavy, too raw, or lacked reliable preview/testing.
 - 🧩 Detect frame-optimized GIFs (🔑 keyframes vs Δ delta frames)
 - ⚡ Render / export all frames in one pass (`--all`, `FrameRenderer`)
 - ✂️ Delete frames safely, 🔑 convert frames to full images, 🧱 unoptimize (`--delete`, `--keyframe`, `--unoptimize`)
+- 🎬 Create a GIF from images (`gifmeta create a.png b.png c.jpg -o out.gif`)
+- ➕ Insert, 📑 duplicate and 🔀 re-order frames (`--insert`, `--duplicate`, `--order`) — even in frame-optimized GIFs
 - 🧪 CLI + doc tests for core functions
 - 🖼️ Side-by-side **visual preview reports** via `run-visual-preview.sh`
 
@@ -152,6 +154,10 @@ You can combine any of the following:
 - `--delete <csv>`: Delete frames, e.g. `2,5` (`--delete-mode merge|drop`, default `merge`).
 - `--keyframe <csv>`: Convert frames to full images, e.g. `3,7`.
 - `--unoptimize`: Convert every frame to a full image.
+- `--insert <FRAME=IMAGE>`: Insert an image before a frame, e.g. `3=logo.png`. Repeat the flag for several images.
+  `--insert-delay <n>` sets their delay (default: delay of the frame they're inserted before).
+- `--duplicate <csv>`: Copy frames, e.g. `2,5` (the copy goes right after the frame; `2,2` = two copies).
+- `--order <csv>`: New frame order, every frame exactly once, e.g. `4,3,2,1,0`.
 
 All frame numbers are 0-based and refer to the **original** GIF.
 
@@ -211,6 +217,28 @@ gifmeta mod input.gif --keyframe 3,7 --output output.gif   # selected frames bec
 gifmeta mod input.gif --unoptimize --output output.gif     # every frame becomes a full image
 ```
 
+### 🎬 Create a GIF from images
+```bash
+gifmeta create frame1.png frame2.png frame3.jpg -o out.gif                 # 100 ms per frame, loops forever
+gifmeta create a.png b.png -o out.gif --delay 50 --delays 1=100 --loop-count 3
+```
+At least 2 images (PNG, JPEG or WebP), all the **same size**. Each image becomes one frame with its own
+palette: exact for ≤ 256 colours, otherwise colour-reduced. Fully transparent pixels stay transparent
+(semi-transparent pixels are drawn opaque — GIF has no partial transparency).
+
+### ➕ Insert, 📑 duplicate and 🔀 re-order frames
+```bash
+gifmeta mod input.gif --insert 3=logo.png -o out.gif                      # new frame before frame 3
+gifmeta mod input.gif --insert 10=end.png --insert-delay 200 -o out.gif   # 10 frames → append, show 2 s
+gifmeta mod input.gif --insert 3=fixed.png --delete 3 -o out.gif          # replace frame 3
+gifmeta mod input.gif --duplicate 0,0 -o out.gif                          # hold the first frame 3× as long
+gifmeta mod input.gif --order 4,3,2,1,0 -o out.gif                        # play backwards
+```
+Inserted images must have the same size as the GIF (fit / crop options may come later). Like deleting,
+frames that depended on their old neighbour are re-written as full images, so everything still looks
+exactly right in frame-optimized GIFs. `--order` can't be combined with `--delete`, `--insert` or
+`--duplicate` — run two commands. It keeps all frames in memory while writing.
+
 ### Modify all values at once example
 ```bash
 gifmeta mod tests/testdata/timing/zero-delay.gif --infinite --delay 15 --delays "0=2,1=20" --output tests/testdata/timing/zero-delay-modified4.gif
@@ -265,6 +293,26 @@ for frame in FrameRenderer::open("input.gif", PreviewMode::Composited)? {
 }
 ```
 
+```rust
+use gifmeta::{create_gif, modify_gif_with_report, CreateOptions, FrameInsert, ModOptions};
+
+// Images → GIF
+create_gif(&["a.png".into(), "b.png".into()], CreateOptions {
+    output: Some("out.gif".into()),
+    delay: Some(20),
+    ..Default::default()
+})?;
+
+// Insert + duplicate in an existing GIF
+let report = modify_gif_with_report(&"in.gif".into(), ModOptions {
+    output: Some("edited.gif".into()),
+    inserts: Some(vec![FrameInsert::new(3, "logo.png").with_delay(50)]),
+    duplicates: Some(vec![0]),
+    ..Default::default()
+})?;
+println!("{} → {} frames", report.frames_in, report.frames_out);
+```
+
 ---
 
 ## 🛠️ Commands
@@ -272,7 +320,8 @@ for frame in FrameRenderer::open("input.gif", PreviewMode::Composited)? {
 | Command   | Description                                       |
 | --------- | ------------------------------------------------- |
 | `info`    | Display GIF metadata (dimensions, loop, delays)   |
-| `mod`     | Apply metadata modifications (loop/delays/output) |
+| `mod`     | Loop, delays, delete / insert / duplicate / re-order frames |
+| `create`  | Create an animated GIF from images (PNG/JPEG/WebP) |
 | `preview` | Extract a single frame as PNG (file or base64)    |
 
 ---
@@ -301,8 +350,11 @@ This is useful for testing transparency, timing, or human-visible playback chang
 - [x] `--infinite` + correct "plays once" handling (v0.5.0)
 - [x] CLI structure with `clap v4`
 - [x] Set per-frame delays (v0.3.0)
-- [ ] Frame editing with duration visuals (experimental)
-- [ ] GUI Companion (Tauri, optional)
+- [x] Delete frames, keyframes, unoptimize (v0.6.0)
+- [x] Create GIFs from images, insert / duplicate / re-order frames (v0.7.0)
+- [x] GUI Companion ([gifmeta-gui](https://github.com/madspaaskesen/gifmeta-gui))
+- [ ] Optimize (shrink file size)
+- [ ] Fit / pad / crop images of a different size
 
 ⚠️ Batch processing and WASM are intentionally skipped.  
 These are best handled externally with scripting or shell tooling.

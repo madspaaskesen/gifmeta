@@ -119,6 +119,7 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 ### Release plan (proposal)
 - ✅ **0.5.0** — Phase 1 + Phase 3 (+ loop fixes). ✅ **0.5.1** — single-pass `FrameRenderer` (fast playback / export).
 - ✅ **0.6.0** — Phases 4, 5 and 6 (keyframe, delete, unoptimize). ✅ **0.6.1** — crates.io description/keywords.
+- ✅ **0.7.0** — Phases 7 and 8 (insert / duplicate / re-order, create from images).
 Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo test`, publish, GitHub release.
 
 ---
@@ -127,7 +128,7 @@ Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo t
 
 Scope stays **frames + metadata only** — no painting, filters or effects. That focus is the point.
 
-### Phase 7 — Insert frame ⬜
+### Phase 7 — Insert, duplicate & re-order frames ✅ (0.7.0, `--insert`, `--duplicate`, `--order`)
 - Insert an image (PNG/JPG/GIF frame) at a position: `mod --insert 3=img.png` / lib `inserts`.
 - Inserted frame is written as a **full keyframe** (`encode_full_frame`); frames after it that
   depended on the old order are re-keyed automatically by the existing **shadow simulation**.
@@ -136,8 +137,11 @@ Scope stays **frames + metadata only** — no painting, filters or effects. That
   Later: fit / pad / crop options.
 - Delay: given per insert, default = delay of the neighbouring frame.
 - GUI: "➕ Insert frame…" (file dialog / drag & drop onto the frame list).
+- Done as planned. Extras: `--insert-delay`; insert before N + delete N = replace (delay not merged);
+  `--duplicate 2,2` (copy right after the frame); `--order` = permutation of all frames
+  (exclusive with delete/insert/duplicate, holds all frames + canvases in memory).
 
-### Phase 8 — Images → GIF ("make a GIF from images") ⬜
+### Phase 8 — Images → GIF ("make a GIF from images") ✅ (0.7.0, `create`)
 - Likely the most searched feature for normal users.
 - CLI: `gifmeta create a.png b.jpg c.png --delay 10 --infinite -o out.gif` / lib `create_gif(…)`.
 - First version: **all images same dimensions** (format may differ — the `image` crate decodes
@@ -146,6 +150,9 @@ Scope stays **frames + metadata only** — no painting, filters or effects. That
   Photos will almost always be quantized → consider one shared palette for all frames later.
 - Transparency: PNG alpha 0 → transparent index; semi-transparent pixels treated as opaque (document).
 - GUI: drop several images → sortable list → delay/loop → Save.
+- Done: `commands/create.rs`, min. 2 images, PNG/JPEG/WebP, per-frame local palette (shared palette
+  still a later idea). Transparent image → that frame *and the one before it* use `Background`
+  disposal, so every frame shows exactly its image.
 
 ### Phase 9 — Optimize (shrink file size) ⬜
 - Reverse of `--unoptimize`: crop each frame to the changed rectangle + mark unchanged pixels
@@ -161,8 +168,18 @@ Scope stays **frames + metadata only** — no painting, filters or effects. That
 - The last kept frame is buffered so deleted delays can be merged into it (`DeleteMode::MergeDelay`);
   deleted frames at the start carry their delay to the first kept frame.
 - Known limitation: a re-keyed frame can't make pixels transparent that are opaque on the output canvas
-  (GIF can only draw on top) → reported in `ModReport::transparency_warnings`. Possible fix later: re-key
-  the previous frame with `Background` disposal.
+  (GIF can only draw on top) → reported in `ModReport::transparency_warnings`. Mostly fixed in 0.7.0
+  (`FrameWriter::make_room_for`): if the previous written frame has disposal Keep/Any it is switched to
+  `Background` (a small delta frame is first re-written as a full image of what it showed). Still a
+  warning when the previous frame uses `Previous` disposal.
+
+### Implementation notes (0.7.0)
+- `commands/modify.rs`: `FrameWriter` holds the encoder, output `Compositor` and the held-back frame;
+  `original()` (copy or re-key) and `image()` (inserted full frame) share the shadow simulation.
+- Streaming path (delete / insert / duplicate / keyframe): inserts are emitted before original frame N;
+  duplicates compare the output canvas with a clone of the original canvas *before* the frame.
+- `--order`: first pass stores every frame (indexed + RGBA) with its canvas before/after, then writes in the new order.
+- `image` crate: `default-features = false`, features `png`, `jpeg`, `webp`.
 - Results: forge-preview.gif (40 frames) delete 1,10,11,12,39 → 35/35 frames pixel-identical
   (ImageMagick compare), 2 re-keyed, exact palettes, 0.48 s.
 

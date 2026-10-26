@@ -26,6 +26,31 @@ fn parse_frames(flag: &str, value: &Option<String>) -> Option<Vec<usize>> {
     })
 }
 
+/// Parses `--insert 3=logo.png` → (3, "logo.png"). Split on the first `=` only, so paths may
+/// contain `=`.
+fn parse_insert(value: &str) -> Result<(usize, PathBuf), String> {
+    let (index, path) = value
+        .split_once('=')
+        .ok_or_else(|| format!("expected FRAME=IMAGE, e.g. 3=logo.png (got '{value}')"))?;
+    let index = index
+        .trim()
+        .parse::<usize>()
+        .map_err(|_| format!("invalid frame index '{index}'"))?;
+    if path.is_empty() {
+        return Err(format!("missing image path in '{value}'"));
+    }
+    Ok((index, PathBuf::from(path)))
+}
+
+fn parse_delays(value: &Option<String>) -> Option<std::collections::HashMap<usize, u16>> {
+    value.as_deref().map(|s| {
+        gifmeta::utils::parse_csv::parse_keyval_csv(s).unwrap_or_else(|e| {
+            eprintln!("❌ --delays: {}", e);
+            std::process::exit(2);
+        })
+    })
+}
+
 #[derive(Subcommand)]
 enum Commands {
     /// Show metadata
@@ -75,6 +100,27 @@ enum Commands {
         #[arg(long)]
         unoptimize: bool,
 
+        /// Insert an image (PNG/JPEG/WebP, same size as the GIF) before a frame: 3=logo.png.
+        /// Use the frame count to append at the end. Repeat the flag for several images.
+        /// Insert before N + --delete N replaces frame N.
+        #[arg(long, value_name = "FRAME=IMAGE", value_parser = parse_insert)]
+        insert: Vec<(usize, PathBuf)>,
+
+        /// Delay for inserted images in centiseconds (default: delay of the frame they are
+        /// inserted before)
+        #[arg(long, value_name = "CS", requires = "insert")]
+        insert_delay: Option<u16>,
+
+        /// Duplicate frames (0-based, comma separated); the copy goes right after the frame.
+        /// List a frame twice for two copies, e.g. 2,2
+        #[arg(long, value_name = "FRAMES")]
+        duplicate: Option<String>,
+
+        /// New frame order: every frame exactly once, e.g. 4,3,2,1,0 plays backwards.
+        /// Can't be combined with --delete, --insert or --duplicate
+        #[arg(long, value_name = "FRAMES", conflicts_with_all = ["delete", "insert", "duplicate"])]
+        order: Option<String>,
+
         /// Delay for all frame
         #[arg(long)]
         delay: Option<u16>,
@@ -86,6 +132,29 @@ enum Commands {
         /// Output Path to the GIF file
         #[arg(short, long)]
         output: Option<PathBuf>,
+    },
+
+    /// Create an animated GIF from images (PNG/JPEG/WebP, at least 2, all the same size)
+    Create {
+        /// Image files, in frame order
+        #[arg(value_name = "IMAGES", required = true, num_args = 2..)]
+        images: Vec<PathBuf>,
+
+        /// Output GIF file
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// Delay for every frame in centiseconds (default 10 = 100 ms)
+        #[arg(long)]
+        delay: Option<u16>,
+
+        /// Per-frame delays, e.g. 0=50,3=100
+        #[arg(long)]
+        delays: Option<String>,
+
+        /// How many times the GIF plays (default: forever)
+        #[arg(long, value_name = "TIMES")]
+        loop_count: Option<u16>,
     },
 
     /// Preview a single frame of a GIF file as PNG or base64.
@@ -186,21 +255,23 @@ fn main() {
             delete_mode,
             keyframe,
             unoptimize,
+            insert,
+            insert_delay,
+            duplicate,
+            order,
             delay,
             delays,
             output,
         } => {
-            let delays_map = match delays
-                .as_deref()
-                .map(gifmeta::utils::parse_csv::parse_keyval_csv)
-            {
-                Some(Err(e)) => {
-                    eprintln!("❌ --delays: {}", e);
-                    std::process::exit(2);
-                }
-                Some(Ok(m)) => Some(m),
-                None => None,
-            };
+            let delays_map = parse_delays(&delays);
+            let inserts: Vec<gifmeta::FrameInsert> = insert
+                .into_iter()
+                .map(|(before, image)| gifmeta::FrameInsert {
+                    before,
+                    image,
+                    delay: insert_delay,
+                })
+                .collect();
             let loop_mode = match (infinite, loop_count) {
                 (true, _) => Some(gifmeta::LoopMode::Infinite),
                 (false, Some(0)) => {
@@ -222,14 +293,26 @@ fn main() {
                 },
                 keyframes: parse_frames("--keyframe", &keyframe),
                 unoptimize,
+                inserts: (!inserts.is_empty()).then_some(inserts),
+                duplicates: parse_frames("--duplicate", &duplicate),
+                order: parse_frames("--order", &order),
             };
             match gifmeta::modify_gif_with_report(&input, opts) {
                 Ok(r) => {
                     if r.frames_in != r.frames_out {
-                        println!(
-                            "🗑️  Frames: {} → {} (deleted {:?})",
-                            r.frames_in, r.frames_out, r.deleted
-                        );
+                        println!("🎞️  Frames: {} → {}", r.frames_in, r.frames_out);
+                    }
+                    if !r.deleted.is_empty() {
+                        println!("🗑️  Deleted: {:?}", r.deleted);
+                    }
+                    if r.inserted > 0 {
+                        println!("➕ Inserted images: {}", r.inserted);
+                    }
+                    if !r.duplicated.is_empty() {
+                        println!("📑 Duplicated: {:?}", r.duplicated);
+                    }
+                    if r.reordered {
+                        println!("🔀 Frames re-ordered");
                     }
                     if !r.rekeyed.is_empty() {
                         println!("🔑 Written as full images: {:?}", r.rekeyed);
@@ -238,6 +321,42 @@ fn main() {
                         eprintln!("⚠️  {}", w);
                     }
                     println!("✅ Modifications applied → {}", r.output.display());
+                }
+                Err(e) => {
+                    eprintln!("❌ {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Create {
+            images,
+            output,
+            delay,
+            delays,
+            loop_count,
+        } => {
+            let opts = gifmeta::CreateOptions {
+                output: Some(output),
+                delay,
+                delays: parse_delays(&delays),
+                loop_mode: loop_count.map(gifmeta::LoopMode::from_count),
+                ..Default::default()
+            };
+            match gifmeta::create_gif(&images, opts) {
+                Ok(r) => {
+                    if !r.quantized.is_empty() {
+                        eprintln!(
+                            "⚠️  images {:?} had more than 256 colours and were colour-reduced",
+                            r.quantized
+                        );
+                    }
+                    println!(
+                        "✅ Created {} frames ({}×{}) → {}",
+                        r.frames,
+                        r.width,
+                        r.height,
+                        r.output.display()
+                    );
                 }
                 Err(e) => {
                     eprintln!("❌ {}", e);

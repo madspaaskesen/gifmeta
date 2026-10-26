@@ -1,9 +1,9 @@
 [package]
 name = "gifmeta"
-version = "0.6.2"
+version = "0.7.0"
 edition = "2021"
 authors = ["Mads Paaskesen <madspaaskesen@gmail.com>"]
-description = "Inspect and edit animated GIFs: fix loops and delays, render frames, and delete frames safely, even in frame-optimized GIFs."
+description = "Inspect, edit and create animated GIFs: fix loops and delays, render frames, delete, insert and re-order frames safely, even in frame-optimized GIFs."
 license = "MIT"
 repository = "https://github.com/madspaaskesen/gifmeta"
 homepage = "https://gifmeta.com"
@@ -21,7 +21,7 @@ tempfile = "3.20.0"
 uuid = { version = "1.17.0", features = ["v4"] }
 serde_json = "1.0.140"
 serde = { version = "1.0.219", features = ["derive"] }
-image = { version = "0.25.6", features = ["png"] }
+image = { version = "0.25.6", default-features = false, features = ["png", "jpeg", "webp"] }
 base64 = "0.22.1"
 
 # Optimize dependencies (gif / image decoding) in dev + test builds — keeps `cargo test`

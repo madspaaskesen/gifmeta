@@ -28,7 +28,8 @@ pub fn get_metadata(
     }
 }
 
-pub use commands::modify::{DeleteMode, ModOptions, ModReport};
+pub use commands::create::{CreateOptions, CreateReport};
+pub use commands::modify::{DeleteMode, FrameInsert, ModOptions, ModReport};
 pub use gifmeta_structs::LoopMode;
 
 /// Modifies a GIF: loop setting, delay for all frames and/or per-frame delays.
@@ -72,13 +73,67 @@ pub fn modify_gif(input: &PathBuf, opts: ModOptions) -> Result<PathBuf, String> 
 /// assert_eq!((report.frames_in, report.frames_out), (5, 4));
 /// assert!(report.rekeyed.contains(&3)); // frame 3 depended on the deleted frame
 /// ```
+///
+/// # Example — insert, duplicate and re-order frames
+/// ```
+/// use gifmeta::{modify_gif_with_report, FrameInsert, ModOptions};
+/// use image::{Rgba, RgbaImage};
+/// let input = "tests/testdata/optimize/moving-square-optimized.gif"; // 100×100, 5 frames
+/// let logo = std::env::temp_dir().join("gifmeta-doc-logo.png");
+/// RgbaImage::from_pixel(100, 100, Rgba([255, 255, 255, 255])).save(&logo).unwrap();
+///
+/// let out = std::env::temp_dir().join("gifmeta-doc-insert.gif");
+/// let report = modify_gif_with_report(&input.into(), ModOptions {
+///     output: Some(out),
+///     inserts: Some(vec![FrameInsert::new(5, &logo).with_delay(100)]), // append, 1 s
+///     duplicates: Some(vec![0]),                                        // frame 0 twice
+///     ..Default::default()
+/// }).unwrap();
+/// assert_eq!(report.frames_out, 7);
+///
+/// let out = std::env::temp_dir().join("gifmeta-doc-order.gif");
+/// let report = modify_gif_with_report(&input.into(), ModOptions {
+///     output: Some(out),
+///     order: Some(vec![4, 3, 2, 1, 0]), // play backwards
+///     ..Default::default()
+/// }).unwrap();
+/// assert!(report.reordered);
+/// ```
 pub fn modify_gif_with_report(input: &PathBuf, opts: ModOptions) -> Result<ModReport, String> {
     if opts.is_empty() {
         return Err("No modification parameters provided. Use at least one of: \
-             --loop-count, --infinite, --delay, --delays, --delete, --keyframe or --unoptimize"
+             --loop-count, --infinite, --delay, --delays, --delete, --keyframe, --unoptimize, \
+             --insert, --duplicate or --order"
             .into());
     }
     commands::modify::apply_with_report(input, &opts)
+}
+
+/// Builds a new animated GIF from still images (PNG, JPEG or WebP) — at least two, all the
+/// same size. Each image becomes one frame; loops forever unless `opts.loop_mode` says otherwise.
+///
+/// # Example
+/// ```
+/// use gifmeta::{create_gif, CreateOptions};
+/// use image::{Rgba, RgbaImage};
+/// let dir = std::env::temp_dir();
+/// let a = dir.join("gifmeta-doc-a.png");
+/// let b = dir.join("gifmeta-doc-b.png");
+/// RgbaImage::from_pixel(8, 8, Rgba([255, 0, 0, 255])).save(&a).unwrap();
+/// RgbaImage::from_pixel(8, 8, Rgba([0, 0, 255, 255])).save(&b).unwrap();
+///
+/// let out = dir.join("gifmeta-doc-create.gif");
+/// let report = create_gif(&[a, b], CreateOptions {
+///     output: Some(out.clone()),
+///     delay: Some(50),
+///     ..Default::default()
+/// }).unwrap();
+/// assert_eq!(report.frames, 2);
+/// let meta = gifmeta::get_metadata(&out, false).unwrap();
+/// assert_eq!((meta.frame_count, meta.total_duration_cs), (2, 100));
+/// ```
+pub fn create_gif(images: &[PathBuf], opts: CreateOptions) -> Result<CreateReport, String> {
+    commands::create::create(images, &opts)
 }
 
 /// Old API. `loop_count`: `0` = infinite, `n` = plays n times.
