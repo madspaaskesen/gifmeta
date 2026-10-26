@@ -118,10 +118,39 @@ RGBA canvas for every frame. Reused by preview, re-keying, delete and unoptimize
 
 ### Release plan (proposal)
 - ✅ **0.5.0** — Phase 1 + Phase 3 (+ loop fixes). ✅ **0.5.1** — single-pass `FrameRenderer` (fast playback / export).
-- ✅ **0.6.0** — Phases 4, 5 and 6 (keyframe, delete, unoptimize).
-- **0.6.0** — Phases 4 + 5.
-- **0.7.0** — Phase 6.
+- ✅ **0.6.0** — Phases 4, 5 and 6 (keyframe, delete, unoptimize). ✅ **0.6.1** — crates.io description/keywords.
 Each release: Cargo.toml version, CHANGELOG, README usage, `cargo fmt && cargo test`, publish, GitHub release.
+
+---
+
+## 🗺️ Roadmap — next ideas (talk first, nothing started)
+
+Scope stays **frames + metadata only** — no painting, filters or effects. That focus is the point.
+
+### Phase 7 — Insert frame ⬜
+- Insert an image (PNG/JPG/GIF frame) at a position: `mod --insert 3=img.png` / lib `inserts`.
+- Inserted frame is written as a **full keyframe** (`encode_full_frame`); frames after it that
+  depended on the old order are re-keyed automatically by the existing **shadow simulation**.
+- Indices: still **original** indices — "insert before original frame N".
+- First version: image must have the **same dimensions** as the GIF canvas → clear error otherwise.
+  Later: fit / pad / crop options.
+- Delay: given per insert, default = delay of the neighbouring frame.
+- GUI: "➕ Insert frame…" (file dialog / drag & drop onto the frame list).
+
+### Phase 8 — Images → GIF ("make a GIF from images") ⬜
+- Likely the most searched feature for normal users.
+- CLI: `gifmeta create a.png b.jpg c.png --delay 10 --infinite -o out.gif` / lib `create_gif(…)`.
+- First version: **all images same dimensions** (format may differ — the `image` crate decodes
+  PNG/JPG/etc.); error listing the mismatching files otherwise.
+- Colours: exact palette when ≤ 256 colours, otherwise NeuQuant (same `encode_full_frame`).
+  Photos will almost always be quantized → consider one shared palette for all frames later.
+- Transparency: PNG alpha 0 → transparent index; semi-transparent pixels treated as opaque (document).
+- GUI: drop several images → sortable list → delay/loop → Save.
+
+### Phase 9 — Optimize (shrink file size) ⬜
+- Reverse of `--unoptimize`: crop each frame to the changed rectangle + mark unchanged pixels
+  transparent. Reuses the renderer and dirty-area logic. "GIF optimizer" is a huge search term.
+- Pairs well with Phase 8 (images → small GIF).
 
 ---
 
