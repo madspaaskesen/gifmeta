@@ -4,7 +4,7 @@
 #   .\scripts\sign-windows.ps1 -Tag v0.7.0
 #
 # Before running: SimplySign Desktop connected (token from the mobile app), GitHub CLI logged in
-# (gh auth login). Thumbprint: see flixlar-caption-editor/docs/codesigning — it changes on renewal.
+# (gh auth login). Thumbprint: see flixlar-caption-editor/docs/codesigning - it changes on renewal.
 param(
   [Parameter(Mandatory = $true)][string]$Tag,
   [string]$Thumbprint = $env:CERTUM_THUMBPRINT,
@@ -14,9 +14,9 @@ param(
 $ErrorActionPreference = "Stop"
 if (-not $Thumbprint) { throw "Pass -Thumbprint or set CERTUM_THUMBPRINT" }
 
-# CI uploads files with the same names — wait until the release build is done.
+# CI uploads files with the same names - wait until the release build is done.
 $ciStatus = gh run list --repo $Repo --workflow release.yml --limit 1 --json status -q ".[0].status"
-if ($ciStatus -ne "completed") { throw "The release workflow is '$ciStatus' — wait until it is done" }
+if ($ciStatus -ne "completed") { throw "The release workflow is '$ciStatus' - wait until it is done" }
 
 $dir = Join-Path $env:TEMP "gifmeta-cli-sign-$Tag"
 Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue
@@ -30,7 +30,7 @@ Expand-Archive -Path $zip -DestinationPath $unpacked
 $exe = Get-ChildItem $unpacked -Recurse -Filter gifmeta.exe | Select-Object -First 1
 if (-not $exe) { throw "gifmeta.exe not found in $zipName" }
 
-Write-Host "🔏 Signing $($exe.FullName)"
+Write-Host "Signing $($exe.FullName)"
 & $SignTool sign /sha1 $Thumbprint /tr http://time.certum.pl /td sha256 /fd sha256 /v $exe.FullName
 if ($LASTEXITCODE) { throw "signtool sign failed" }
 & $SignTool verify /pa /all $exe.FullName
@@ -40,4 +40,4 @@ if ($LASTEXITCODE) { throw "signtool verify failed" }
 Remove-Item $zip
 Compress-Archive -Path (Join-Path $unpacked "*") -DestinationPath $zip
 gh release upload $Tag $zip --repo $Repo --clobber
-Write-Host "✅ Signed and uploaded $zipName to $Tag"
+Write-Host "Signed and uploaded $zipName to $Tag"
